@@ -240,3 +240,4 @@ export function createApp(deps: FacilitatorDeps) {
 
   return app;
 }
+export { Rails } from "./rails.js";
