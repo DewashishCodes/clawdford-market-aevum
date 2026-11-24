@@ -13,7 +13,8 @@
     "test": "pnpm -r --if-present test",
     "check-setup": "pnpm --filter @clawdford/aevum check-setup",
     "test:contracts": "cd contracts && forge test",
-    "check-shanghai": "cd contracts && forge build && cd .. && node tools/check-shanghai.mjs contracts/out"
+    "check-shanghai": "cd contracts && forge build && cd .. && node tools/check-shanghai.mjs contracts/out",
+    "export-abis": "node tools/export-abis.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
