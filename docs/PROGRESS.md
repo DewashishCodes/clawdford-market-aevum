@@ -2,6 +2,14 @@
 
 Newest first. One entry per phase (see `docs/PHASES.md`).
 
+## Phase 1: registries (Nov 24)
+
+- `MockTUSD8`: 6 decimals, EIP-712 domain ("tUSD8", "2"), EIP-2612 permit, EIP-3009 transfer / receive / cancel authorization.
+- `IdentityRegistry`: minimal ERC-8004-style identity. Unique domain per identity, controller can update the agent card or hand over control.
+- `StallRegistry`: stalls tied to an identity, staked in tUSD8 (approve or permit, permit front-run safe). Price, payee, quote key and endpoint updates. Unstake with cooldown; stake under cooldown stays slashable. Arbiter slashes to the harmed buyer or the treasury. Stalls below `minStake` go inactive. Paginated `listStalls` and a lean `paymentInfo` view for the vault.
+- 32 tests including a stake accounting fuzz test. Coverage: 98.9% lines overall, `StallRegistry` 100% lines and branches.
+- All three contracts pass the Shanghai opcode check. CI now also runs `forge fmt --check`.
+
 ## Phase 0: scaffold (Nov 24)
 
 - pnpm workspace, shared `tsconfig.base.json`.
