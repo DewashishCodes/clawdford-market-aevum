@@ -2,6 +2,15 @@
 
 Newest first. One entry per phase (see `docs/PHASES.md`).
 
+## Phase 3: vault payment modes (Nov 24)
+
+- Vault source split into `VaultBase`, `VaultChannels`, `VaultTasks`; still one deployed `AgentVault` (22.2 KB runtime).
+- Stream: agent-signed `OpenChannel` / `TopUp` (charged against caps), cumulative `Voucher` claims in batches with a receipt per claim, close by owner, agent or agent signature, 10 minute challenge window, `finalizeClose` refund. Revoke starts the window on every open channel (max 16 per session).
+- Task: agent-signed `CreateTask` escrow, `submitResult` before the deadline, approve by owner or by agent when allowed (direct or signed), `autoRelease` after a 1 hour review window, owner `dispute`, arbiter `resolve` split, `cancel` refund after the deadline.
+- `_refund` credits total spend fully and today's spend only for same-day charges.
+- 97 contract tests. Coverage 99.4% lines, 97.4% branches.
+- Decisions D7 to D10 logged.
+
 ## Phase 2: vault core (Nov 24)
 
 - `AgentVault`: owner balances funded by approve, permit or gasless EIP-3009 `receiveWithAuthorization` (relayed, always credited to the signer).
