@@ -250,7 +250,7 @@ describe.skipIf(!MODE)(`facilitator e2e on ${MODE}`, () => {
   });
 
   it("opens and tops up a stream channel", async () => {
-    const accepted = { scheme: "batch-settlement", ...common(), amount: "1000", extra: { vault: d.AgentVault, stallId: stall.stream.toString(), unit: "call", minDeposit: "20000" } } as PaymentRequirements;
+    const accepted = { scheme: "batch-settlement", ...common(), amount: "1000", extra: { vault: d.AgentVault, stallId: stall.stream.toString(), unit: "call", minDeposit: "20000", maxAmount: "5000" } } as PaymentRequirements;
     const vb = ((await now()) + 300n).toString();
     const open = { sessionId: sessionId.toString(), stallId: stall.stream.toString(), deposit: "20000", validBefore: vb, nonce: (++nonce).toString() };
     const opened = await post("/settle", req(accepted, { action: "open", open, signature: await signed("OpenChannel", open) }));
