@@ -11,7 +11,9 @@
     "build": "pnpm -r --if-present build",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "check-setup": "pnpm --filter @clawdford/aevum check-setup"
+    "check-setup": "pnpm --filter @clawdford/aevum check-setup",
+    "test:contracts": "cd contracts && forge test",
+    "check-shanghai": "cd contracts && forge build && cd .. && node tools/check-shanghai.mjs contracts/out"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
