@@ -4,7 +4,7 @@
 
 Built for the Aevum Builder Challenge #1 (QDay), track Native AI Assistants. Settles on the QDay Aevum testnet (chain ID 44005) in tUSD8. Named after Crawford Market in Mumbai: one roof, hundreds of stalls, open prices.
 
-> Status: smart contracts done and tested (phases 0 to 4). Off-chain pieces (x402 package, facilitator, SDKs, demo stalls, MCP server, web app) come next. See [docs/PHASES.md](docs/PHASES.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
+> Status: smart contracts done, tested and deployed to Aevum testnet (phases 0 to 4). Off-chain pieces (x402 package, facilitator, SDKs, demo stalls, MCP server, web app) come next. See [docs/PHASES.md](docs/PHASES.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## The problem
 
@@ -34,7 +34,17 @@ Aevum rules we follow: Shanghai EVM (OpenZeppelin pinned to v5.1.0, CI scans byt
 
 Testing: 107 unit, fuzz and invariant tests plus fork tests against the real tUSD8. Coverage 99.4% lines, 97.5% branches.
 
-Addresses on Aevum: not deployed yet. They will be listed here and in `deployments/44005.json`.
+### Deployed on Aevum testnet (chain 44005)
+
+Deploy block 4,018,135, from source commit [`09a27a4`](https://github.com/DewashishCodes/clawdford-market-aevum/tree/09a27a468ea4690161af9d809834bc3663c09ed7). Full record in [`deployments/44005.json`](deployments/44005.json).
+
+| Contract | Address |
+|---|---|
+| `AgentVault` | `0x88f4CceafDF6c90664117CC8E0A3bB3C4C275BBE` |
+| `StallRegistry` | `0xfBF14819a42dA717b779b6A900DDA461CDBDAD70` |
+| `IdentityRegistry` | `0x3580f1d5Bf7eB3A82a043545e748EA5Be8128bf8` |
+| `ReputationRegistry` | `0xE93A44e253C7d5697f1b4E480f7F54B1A7dfAfC3` |
+| tUSD8 (QDay token) | `0x456569838f1d43009A91ebA4263147Afd7233483` |
 
 ## Repo layout
 

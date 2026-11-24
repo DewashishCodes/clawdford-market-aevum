@@ -4,13 +4,8 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-1. **Deploy to Aevum (finishes phase 4).** Needs funded keys, which only the user can get:
-   - Create a deployer wallet, fund it with tQDAY from https://faucet.qday.info/en and tUSD8 from the QDay Discord `/faucet`.
-   - Copy `.env.example` to `.env`, fill `DEPLOYER_PRIVATE_KEY`, `TREASURY_ADDRESS`, `ARBITER_ADDRESS`.
-   - `pnpm check-setup` to confirm balances, then `make deploy-aevum` (or, without make: load `.env` and run `cd contracts && forge script script/Deploy.s.sol --rpc-url aevum --broadcast --legacy --slow`).
-   - Commit `deployments/44005.json`, add addresses and the source commit link to the README, note the deploy block in `docs/QDAY_NOTES.md`.
-2. **Phase 5** (`phase/5-x402-facilitator`): `packages/x402` (zod schemas, header encode/decode, EIP-712 types matching `VaultBase` / `VaultChannels` / `VaultTasks`) and `services/facilitator`. Check the current x402 spec header names first (PRD 8.1 [VERIFY]).
-3. Open PRD questions in `docs/QDAY_NOTES.md` (official facilitator, ERC-8004 registries) are still unanswered; ask on the QDay Discord.
+1. **Phase 5** (`phase/5-x402-facilitator`): `packages/x402` (zod schemas, header encode/decode, EIP-712 types matching `VaultBase` / `VaultChannels` / `VaultTasks`) and `services/facilitator`. Check the current x402 spec header names first (PRD 8.1 [VERIFY]).
+2. Open PRD questions in `docs/QDAY_NOTES.md` (official facilitator, ERC-8004 registries) are still unanswered; ask on the QDay Discord.
 
 ## Phase 4: reputation, invariants, fork tests, deploy script (Nov 24)
 
@@ -20,7 +15,7 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 - Verified the real tUSD8 matches `MockTUSD8` (domain, version "2", 6 decimals, permit and 3009 typehashes). See `docs/QDAY_NOTES.md`.
 - `script/Deploy.s.sol` deploys everything and writes `deployments/<chainId>.json` with addresses and deploy block. Verified with legacy txs on a local Shanghai anvil.
 - 107 tests (+4 fork tests skipped offline). Coverage 99.4% lines, 97.5% branches.
-- Not done: the live Aevum deploy (needs funded keys, see "Next session").
+- Deployed to Aevum testnet at block 4,018,135 (PR #6). Addresses in the README and `deployments/44005.json`. Treasury and arbiter are the deployer key for now.
 
 ## Phase 3: vault payment modes (Nov 24)
 
