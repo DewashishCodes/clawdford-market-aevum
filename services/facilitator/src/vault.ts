@@ -13,7 +13,10 @@ export type VaultCall =
   | { functionName: "payExact"; args: readonly unknown[] }
   | { functionName: "openChannel"; args: readonly unknown[] }
   | { functionName: "topUp"; args: readonly unknown[] }
-  | { functionName: "createTask"; args: readonly unknown[] };
+  | { functionName: "createTask"; args: readonly unknown[] }
+  | { functionName: "claim"; args: readonly unknown[] }
+  | { functionName: "requestCloseWithSig"; args: readonly unknown[] }
+  | { functionName: "finalizeClose"; args: readonly unknown[] };
 
 export interface Planned {
   call: VaultCall;

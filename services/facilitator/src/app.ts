@@ -11,7 +11,14 @@ import {
   type WalletClient,
 } from "viem";
 import { agentVaultAbi, type Deployment } from "@clawdford/aevum";
-import { FacilitatorRequest, X402_VERSION, networkOf, type SettlementResponse } from "@clawdford/x402";
+import {
+  ClaimRequest,
+  CloseRequest,
+  FacilitatorRequest,
+  X402_VERSION,
+  networkOf,
+  type SettlementResponse,
+} from "@clawdford/x402";
 import { plan, type Planned } from "./vault.js";
 import type { Rails } from "./rails.js";
 
@@ -22,6 +29,8 @@ export interface FacilitatorDeps {
   rails: Rails;
   /** Warn (and flag in /activity) when the gas wallet drops below this many wei. */
   lowBalanceWei: bigint;
+  /** Smallest voucher claim we pay gas for while a channel is open (closing channels are always claimable). */
+  minClaim: bigint;
 }
 
 type Checked =
@@ -43,7 +52,7 @@ export function createApp(deps: FacilitatorDeps) {
   const network = networkOf(d.chainId);
   const facilitator = walletClient.account.address;
 
-  // One settle at a time: keeps our own tx nonces in order and stops two relays of one signed message racing.
+  // One send at a time: keeps our own tx nonces in order and stops two relays of one signed message racing.
   let queue: Promise<unknown> = Promise.resolve();
   const serial = <T>(fn: () => Promise<T>) => {
     const run = queue.then(fn);
@@ -51,15 +60,14 @@ export function createApp(deps: FacilitatorDeps) {
     return run;
   };
 
-  async function check(body: unknown, ip: string | undefined): Promise<Checked> {
-    const parsed = FacilitatorRequest.safeParse(body);
-    if (!parsed.success) return { ok: false, reason: "invalid_payload" };
-    const planned = plan(parsed.data, d);
-    if (typeof planned === "string") return { ok: false, reason: planned };
+  const getChannel = (channelId: bigint) =>
+    publicClient.readContract({ ...vault, functionName: "getChannel", args: [channelId] });
 
-    if (planned.channelId !== undefined) {
-      const ch = await publicClient.readContract({ ...vault, functionName: "getChannel", args: [planned.channelId] });
-      planned.sessionId = ch.sessionId;
+  /** Payer lookup, daily limits (when `ip` is given) and an eth_call of the vault function. */
+  async function check(planned: Planned | string, ip: string | undefined): Promise<Checked> {
+    if (typeof planned === "string") return { ok: false, reason: planned };
+    if (planned.channelId !== undefined && planned.sessionId === 0n) {
+      planned.sessionId = (await getChannel(planned.channelId)).sessionId;
     }
     const session = await publicClient.readContract({ ...vault, functionName: "getSession", args: [planned.sessionId] });
     const payer = session.owner;
@@ -75,14 +83,52 @@ export function createApp(deps: FacilitatorDeps) {
     return { ok: true, planned, payer };
   }
 
-  async function settle(body: unknown, ip: string): Promise<SettlementResponse> {
-    const c = await check(body, ip);
+  const planPayment = (body: unknown): Planned | string => {
+    const parsed = FacilitatorRequest.safeParse(body);
+    return parsed.success ? plan(parsed.data, d) : "invalid_payload";
+  };
+
+  async function planClaim(body: unknown): Promise<Planned | string> {
+    const parsed = ClaimRequest.safeParse(body);
+    if (!parsed.success) return "invalid_payload";
+    const { voucher, signature } = parsed.data;
+    const channelId = BigInt(voucher.channelId);
+    const cumulative = BigInt(voucher.cumulativeAmount);
+    const ch = await getChannel(channelId);
+    const delta = cumulative > ch.claimed ? cumulative - ch.claimed : 0n;
+    if (ch.closeAt === 0n && delta < deps.minClaim) return "claim_below_minimum";
+    return {
+      call: { functionName: "claim", args: [channelId, cumulative, signature] },
+      sessionId: ch.sessionId,
+      channelId,
+      action: "claim",
+      amount: delta.toString(),
+    };
+  }
+
+  async function planClose(body: unknown): Promise<Planned | string> {
+    const parsed = CloseRequest.safeParse(body);
+    if (!parsed.success) return "invalid_payload";
+    const channelId = BigInt(parsed.data.channelId);
+    const ch = await getChannel(channelId);
+    if (ch.closeAt === 0n) {
+      if (!parsed.data.signature) return "signature_required";
+      const call = { functionName: "requestCloseWithSig", args: [channelId, parsed.data.signature] } as const;
+      return { call, sessionId: ch.sessionId, channelId, action: "close", amount: "0" };
+    }
+    const refund = (ch.deposit - ch.claimed).toString();
+    return { call: { functionName: "finalizeClose", args: [channelId] }, sessionId: ch.sessionId, channelId, action: "finalize", amount: refund };
+  }
+
+  /** Checks, then sends a legacy tx and reads the ids out of the receipt. Every attempt is recorded. */
+  async function execute(planned: Planned | string, ip: string, scheme: string): Promise<SettlementResponse> {
+    const c = await check(planned, ip);
     const base = { network, payer: c.payer, amount: c.planned?.amount };
     const record = (ok: boolean, extra: { reason?: string; tx?: string; refId?: string }) =>
       rails.record({
         ip,
         sessionId: c.planned?.sessionId.toString() ?? "unknown",
-        scheme: (body as { paymentRequirements?: { scheme?: string } })?.paymentRequirements?.scheme ?? "unknown",
+        scheme,
         action: c.planned?.action ?? "unknown",
         ok,
         amount: c.planned?.amount,
@@ -110,11 +156,12 @@ export function createApp(deps: FacilitatorDeps) {
 
     const ids: Pick<SettlementResponse, "receiptId" | "channelId" | "taskId"> = {};
     for (const log of parseEventLogs({ abi: agentVaultAbi, logs: receipt.logs })) {
-      if (log.eventName === "Paid") ids.receiptId = log.args.receiptId.toString();
-      if (log.eventName === "ChannelOpened" || log.eventName === "ChannelToppedUp") ids.channelId = log.args.channelId.toString();
-      if (log.eventName === "TaskCreated") ids.taskId = log.args.taskId.toString();
+      const args = log.args as { receiptId?: bigint; channelId?: bigint; taskId?: bigint };
+      if (args.receiptId !== undefined) ids.receiptId = args.receiptId.toString();
+      if (args.channelId !== undefined) ids.channelId = args.channelId.toString();
+      if (args.taskId !== undefined) ids.taskId = args.taskId.toString();
     }
-    record(true, { tx: hash, refId: ids.receiptId ?? ids.channelId ?? ids.taskId });
+    record(true, { tx: hash, refId: ids.receiptId ?? ids.taskId ?? ids.channelId });
     void warnIfLow();
     return { ...base, success: true, transaction: hash, ...ids };
   }
@@ -131,6 +178,8 @@ export function createApp(deps: FacilitatorDeps) {
   const app = express();
   app.use(express.json({ limit: "64kb" }));
   const ipOf = (req: Request) => req.ip ?? "unknown";
+  const schemeOf = (body: unknown) =>
+    (body as { paymentRequirements?: { scheme?: string } })?.paymentRequirements?.scheme ?? "unknown";
 
   app.get("/supported", (_req, res) => {
     res.json({
@@ -147,7 +196,7 @@ export function createApp(deps: FacilitatorDeps) {
 
   app.post("/verify", async (req, res, next) => {
     try {
-      const c = await check(req.body, undefined);
+      const c = await check(planPayment(req.body), undefined);
       res.json(c.ok ? { isValid: true, payer: c.payer } : { isValid: false, invalidReason: c.reason, payer: c.payer });
     } catch (err) {
       next(err);
@@ -156,7 +205,24 @@ export function createApp(deps: FacilitatorDeps) {
 
   app.post("/settle", async (req, res, next) => {
     try {
-      res.json(await serial(() => settle(req.body, ipOf(req))));
+      res.json(await serial(() => execute(planPayment(req.body), ipOf(req), schemeOf(req.body))));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Option B (D13): sellers never need gas. Claims and closes go through the same checks, limits and queue.
+  app.post("/claim", async (req, res, next) => {
+    try {
+      res.json(await serial(async () => execute(await planClaim(req.body), ipOf(req), "batch-settlement")));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post("/close", async (req, res, next) => {
+    try {
+      res.json(await serial(async () => execute(await planClose(req.body), ipOf(req), "batch-settlement")));
     } catch (err) {
       next(err);
     }
@@ -174,3 +240,4 @@ export function createApp(deps: FacilitatorDeps) {
 
   return app;
 }
+export { Rails } from "./rails.js";

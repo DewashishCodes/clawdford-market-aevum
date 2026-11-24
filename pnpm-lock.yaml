@@ -28,6 +28,40 @@ importers:
         specifier: ^4.19.2
         version: 4.23.15
 
+  packages/sdk:
+    dependencies:
+      '@clawdford/aevum':
+        specifier: workspace:*
+        version: link:../aevum
+      '@clawdford/x402':
+        specifier: workspace:*
+        version: link:../x402
+      express:
+        specifier: ^5.3.0
+        version: 5.3.0
+      viem:
+        specifier: ^2.58.6
+        version: 2.58.6(typescript@5.9.3)(zod@4.6.7)
+    devDependencies:
+      '@clawdford/facilitator':
+        specifier: workspace:*
+        version: link:../../services/facilitator
+      '@clawdford/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
+
+  packages/testkit:
+    dependencies:
+      '@clawdford/aevum':
+        specifier: workspace:*
+        version: link:../aevum
+      viem:
+        specifier: ^2.58.6
+        version: 2.58.6(typescript@5.9.3)(zod@4.6.7)
+
   packages/x402:
     dependencies:
       viem:
@@ -52,6 +86,9 @@ importers:
         specifier: ^2.58.6
         version: 2.58.6(typescript@5.9.3)(zod@4.6.7)
     devDependencies:
+      '@clawdford/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6

@@ -39,8 +39,10 @@ const rails = new Rails(env("FACILITATOR_DB", "facilitator.sqlite"), {
   perDay: Number(env("LIMIT_PER_DAY", "10000")),
 });
 const lowBalanceWei = parseEther(env("LOW_BALANCE_TQDAY", "0.05"));
+// 0.01 tUSD8: below this an open channel's claim waits, so we never spend more gas than the fee earns.
+const minClaim = BigInt(env("MIN_CLAIM", "10000"));
 
-const app = createApp({ publicClient, walletClient, deployment, rails, lowBalanceWei });
+const app = createApp({ publicClient, walletClient, deployment, rails, lowBalanceWei, minClaim });
 const port = Number(env("FACILITATOR_PORT", "4020"));
 app.listen(port, async () => {
   const wei = await publicClient.getBalance({ address: account.address });

@@ -4,7 +4,7 @@
 
 Built for the Aevum Builder Challenge #1 (QDay), track Native AI Assistants. Settles on the QDay Aevum testnet (chain ID 44005) in tUSD8. Named after Crawford Market in Mumbai: one roof, hundreds of stalls, open prices.
 
-> Status: smart contracts done, tested and deployed to Aevum testnet (phases 0 to 4). Off-chain pieces (x402 package, facilitator, SDKs, demo stalls, MCP server, web app) come next. See [docs/PHASES.md](docs/PHASES.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
+> Status: contracts deployed to Aevum testnet; x402 package, facilitator and buyer/seller SDKs done (phases 0 to 6). Demo stalls, MCP server and web app come next. See [docs/PHASES.md](docs/PHASES.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## The problem
 
@@ -52,7 +52,9 @@ Deploy block 4,018,135, from source commit [`09a27a4`](https://github.com/Dewash
 contracts/          Foundry project (src, test, script); Shanghai, OZ 5.1.0
 packages/aevum/     viem chain defs, tUSD8 constants, ABIs, deployments loader, getLogsChunked, check-setup
 packages/x402/      x402 v2 schemas, header codec, vault EIP-712 types
-services/facilitator/  /supported /verify /settle /activity, SQLite rails
+packages/sdk/       buyer (payingFetch + guards) and seller (paid() middleware, settler) SDKs
+packages/testkit/   test-only anvil setup shared by the e2e suites
+services/facilitator/  /supported /verify /settle /claim /close /activity, SQLite rails
 tools/              Shanghai bytecode checker
 docs/               PRD, phases, progress, decisions, QDay notes
 deployments/        <chainId>.json written by the deploy script
@@ -70,8 +72,9 @@ pnpm check-shanghai                              # build + Cancun opcode scan
 pnpm check-setup                                 # Aevum RPC + balances for keys in .env
 ```
 
-Facilitator end to end (spawns anvil on port 8546, deploys, pays over HTTP with x402 headers), from `services/facilitator/`:
-`FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts`, or `FACILITATOR_E2E=fork` for a fork of Aevum with the real tUSD8.
+End to end (each spawns anvil, deploys and pays over HTTP with x402 headers; run them one at a time):
+from `services/facilitator/`: `FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
+from `packages/sdk/`: `SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts`. Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
 
 Run the facilitator: set `FACILITATOR_PRIVATE_KEY` (and `CHAIN_ID`) in `.env`, then `pnpm --filter @clawdford/facilitator start` (port 4020).
 

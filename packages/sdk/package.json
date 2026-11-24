@@ -1,0 +1,26 @@
+{
+  "name": "@clawdford/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Buyer (payingFetch with payee and price guards, channels) and seller (paid() middleware, voucher store, settler) SDKs",
+  "exports": {
+    "./buyer": "./src/buyer.ts",
+    "./seller": "./src/seller.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clawdford/aevum": "workspace:*",
+    "@clawdford/x402": "workspace:*",
+    "express": "^5.3.0",
+    "viem": "^2.58.6"
+  },
+  "devDependencies": {
+    "@clawdford/facilitator": "workspace:*",
+    "@clawdford/testkit": "workspace:*",
+    "@types/express": "^5.0.6"
+  }
+}

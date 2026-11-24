@@ -54,12 +54,13 @@ export const ExactRequirements = z.object({
 export const StreamRequirements = z.object({
   scheme: z.literal("batch-settlement"),
   ...common,
-  extra: z.object({ ...commonExtra, unit: z.string(), minDeposit: uint }),
+  /** `maxAmount`: the most this one request can cost; the channel must have that much headroom. */
+  extra: z.object({ ...commonExtra, unit: z.string(), minDeposit: uint, maxAmount: uint }),
 });
 export const EscrowRequirements = z.object({
   scheme: z.literal("escrow"),
   ...common,
-  extra: z.object({ ...commonExtra, specHash: bytes32.optional() }),
+  extra: z.object({ ...commonExtra, specHash: bytes32.optional(), deadlineSeconds: z.number().int().positive().optional() }),
 });
 export const PaymentRequirements = z.discriminatedUnion("scheme", [
   ExactRequirements,
@@ -132,6 +133,25 @@ export const SettlementResponse = z.object({
   receiptId: uint.optional(),
   channelId: uint.optional(),
   taskId: uint.optional(),
+  /** Stream only: the channel's total metered cost so far; the next voucher must cover it. */
+  owed: uint.optional(),
+});
+
+/** Facilitator `/claim`: relay a seller's voucher claim (the facilitator pays the gas). */
+export const ClaimRequest = z.object({ voucher: Voucher, signature });
+/** Facilitator `/close`: start the close with the agent's CloseChannel signature, or finalize after the window. */
+export const CloseRequest = z.object({ channelId: uint, signature: signature.optional() });
+
+/**
+ * Seller agent card, served at the identity's on-chain `agentCardURI`. Buyers check that `payee` matches the quote
+ * and the stall's registered payee (Confirmation of Payee) and that the stall is listed.
+ */
+export const AgentCard = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  chainId: z.number().int(),
+  payee: address,
+  stallIds: z.array(uint),
 });
 
 export const SupportedResponse = z.object({
@@ -154,3 +174,8 @@ export type FacilitatorRequest = z.infer<typeof FacilitatorRequest>;
 export type VerifyResponse = z.infer<typeof VerifyResponse>;
 export type SettlementResponse = z.infer<typeof SettlementResponse>;
 export type SupportedResponse = z.infer<typeof SupportedResponse>;
+export type StreamRequirements = z.infer<typeof StreamRequirements>;
+export type EscrowRequirements = z.infer<typeof EscrowRequirements>;
+export type ClaimRequest = z.infer<typeof ClaimRequest>;
+export type CloseRequest = z.infer<typeof CloseRequest>;
+export type AgentCard = z.infer<typeof AgentCard>;

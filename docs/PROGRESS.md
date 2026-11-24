@@ -4,10 +4,18 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-1. **Phase 6** (`phase/6-sdk`): buyer SDK (`payingFetch`, Confirmation of Payee against `StallRegistry.paymentInfo`, price guard, channels and vouchers) and seller SDK (`paid()` middleware that emits `PAYMENT-REQUIRED` and calls the facilitator, voucher store, settler, agent card). Build on `@clawdford/x402`; the e2e test in `services/facilitator/test/e2e.test.ts` shows the full buyer and seller signing flow.
-2. Left for later from phase 5: facilitator relay for gasless `depositWithAuthorization` (needed by `/wallet` in phase 9) and whether the facilitator should also relay seller voucher `claim`s (decide in phase 6). Set `app.set("trust proxy", ...)` when the facilitator goes behind a proxy in phase 10, or per-IP limits see the proxy IP.
-3. To run the facilitator on Aevum, add `FACILITATOR_PRIVATE_KEY` (a separate funded key) to `.env`.
-4. Open PRD questions in `docs/QDAY_NOTES.md` (official QDay facilitator, ERC-8004 registries) are still unanswered; ask on the QDay Discord.
+1. **Phase 7** (`phase/7-stalls`): demo stalls 1 to 8 in `services/sellers` (one Express server, one `createSeller` per stall, `serveAgentCard` per identity) and a seed script that registers identities with an http `agentCardURI`, stalls and small stakes. Stall 8 (Shady) quotes above its on-chain price and points its card at a different payee; the buyer SDK already refuses both (`OVERPRICED`, `PAYEE_MISMATCH`). Start from `packages/sdk/test/e2e.test.ts`, which already runs one stall per mode.
+2. Fund the facilitator wallet `0x1f95...4FCc` (key is in `.env`, balance 0): the faucet needs a browser wallet, or send about 0.3 tQDAY from the deployer. Needed before the first live run.
+3. Still open from phase 5: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `trust proxy` behind a proxy (phase 10), the PRD questions in `docs/QDAY_NOTES.md`.
+
+## Phase 6: buyer and seller SDKs (Nov 24)
+
+- `@clawdford/sdk/seller`: `createSeller` + `paid()` Express middleware for `exact`, `license`, `stream` and `task`. Answers 402 with a fresh signed quote; settles exact, license and task through the facilitator before the handler; streams check the voucher locally (channel and session read from chain, agent signature) and meter the cost when the handler writes its headers. Voucher store in SQLite. `settleNow` / `startSettler` claim through the facilitator and finalize closed channels. `submitResult` for tasks, `serveAgentCard`.
+- `@clawdford/sdk/buyer`: `createBuyer` + `payingFetch` (402 to sign to retry), guards before signing (session revoked or expired, Confirmation of Payee against the stall and the on-chain agent card, price against the on-chain unit price and the per-call budget), channels that open, top up and close themselves, readable refusal codes (`PAYEE_MISMATCH`, `OVERPRICED`, `CAP_EXCEEDED`, `SESSION_REVOKED`, ...). Returns `{ data, receipt, spent }`.
+- Facilitator (option B, D13): `/claim` and `/close` so sellers never need gas, with a 0.01 tUSD8 minimum claim on open channels.
+- Decisions D12 (pay-as-you-go streams), D13 (facilitator pays sellers' gas), D14 (agent card from the identity's on-chain URI).
+- `packages/testkit`: shared anvil setup (deploy, one stall per mode, funded session) for both e2e suites.
+- SDK e2e: exact, license, four metered stream calls with a top up, settler claim, close and refund to the owner, task escrow plus `submitResult`, `OVERPRICED`, `PAYEE_MISMATCH`, revoke. Passes on anvil and on the Aevum fork. CI now runs both e2e suites on anvil.
 
 ## Phase 5: x402 package and facilitator (Nov 24)
 
