@@ -29,6 +29,8 @@ check-shanghai: build
 coverage:
 	cd contracts && forge coverage --no-match-coverage "(test|script)/" --report summary
 
+# Deploy targets read keys and settings from the root .env.
+
 # Plain local chain with MockTUSD8.
 anvil:
 	anvil --hardfork shanghai
@@ -38,10 +40,10 @@ fork:
 	anvil --fork-url $(AEVUM_RPC) --hardfork shanghai --chain-id $(FORK_CHAIN_ID)
 
 deploy-fork:
-	cd contracts && forge script script/Deploy.s.sol --rpc-url fork --broadcast --legacy
+	set -a && . ./.env && set +a && cd contracts && forge script script/Deploy.s.sol --rpc-url fork --broadcast --legacy
 
 deploy-aevum: check-shanghai
-	cd contracts && forge script script/Deploy.s.sol --rpc-url aevum --broadcast --legacy --slow
+	set -a && . ./.env && set +a && cd contracts && forge script script/Deploy.s.sol --rpc-url aevum --broadcast --legacy --slow
 
 check-setup:
 	pnpm check-setup
