@@ -214,20 +214,6 @@ abstract contract VaultChannels is VaultBase {
         delete _openIndex[channelId];
     }
 
-    /// @dev Agent-signed message with a deadline and a per-session nonce (shared with payment intents).
-    function _useSignedNonce(
-        uint256 sessionId,
-        uint256 validBefore,
-        uint256 nonce,
-        bytes32 digest,
-        bytes calldata agentSig
-    ) internal {
-        if (block.timestamp >= validBefore) revert IntentExpired();
-        if (intentNonceUsed[sessionId][nonce]) revert NonceAlreadyUsed(sessionId, nonce);
-        _requireAgent(sessionId, digest, agentSig);
-        intentNonceUsed[sessionId][nonce] = true;
-    }
-
     // ------------------------------------------------------------------ views
 
     function hashVoucher(uint256 channelId, uint256 cumulativeAmount) public view returns (bytes32) {

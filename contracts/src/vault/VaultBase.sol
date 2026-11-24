@@ -163,6 +163,7 @@ abstract contract VaultBase is Ownable2Step, ReentrancyGuard, EIP712 {
     error QuoteMismatch();
     error WrongBuyerSession(uint256 expected, uint256 actual);
     error NonceAlreadyUsed(uint256 sessionId, uint256 nonce);
+    error NotArbiter(address caller);
 
     // ------------------------------------------------------------------ setup
 
@@ -423,10 +424,22 @@ abstract contract VaultBase is Ownable2Step, ReentrancyGuard, EIP712 {
     }
 
     function _useIntent(PaymentIntent calldata i, bytes calldata sig) internal {
-        if (block.timestamp >= i.validBefore) revert IntentExpired();
-        if (intentNonceUsed[i.sessionId][i.nonce]) revert NonceAlreadyUsed(i.sessionId, i.nonce);
-        _requireAgent(i.sessionId, hashIntent(i), sig);
-        intentNonceUsed[i.sessionId][i.nonce] = true;
+        _useSignedNonce(i.sessionId, i.validBefore, i.nonce, hashIntent(i), sig);
+    }
+
+    /// @dev Agent-signed message with a deadline and a per-session nonce. Intents, channel opens, top ups and task
+    ///      creation share one nonce space per session.
+    function _useSignedNonce(
+        uint256 sessionId,
+        uint256 validBefore,
+        uint256 nonce,
+        bytes32 digest,
+        bytes calldata agentSig
+    ) internal {
+        if (block.timestamp >= validBefore) revert IntentExpired();
+        if (intentNonceUsed[sessionId][nonce]) revert NonceAlreadyUsed(sessionId, nonce);
+        _requireAgent(sessionId, digest, agentSig);
+        intentNonceUsed[sessionId][nonce] = true;
     }
 
     function _requireAgent(uint256 sessionId, bytes32 digest, bytes calldata sig) internal view {
