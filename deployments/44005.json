@@ -1,0 +1,13 @@
+{
+  "AgentVault": "0x88f4CceafDF6c90664117CC8E0A3bB3C4C275BBE",
+  "IdentityRegistry": "0x3580f1d5Bf7eB3A82a043545e748EA5Be8128bf8",
+  "ReputationRegistry": "0xE93A44e253C7d5697f1b4E480f7F54B1A7dfAfC3",
+  "StallRegistry": "0xfBF14819a42dA717b779b6A900DDA461CDBDAD70",
+  "arbiter": "0xcd9282b3aA13a0e89b392af8c95fD7CdcD48a7d1",
+  "chainId": 44005,
+  "deployBlock": 4018135,
+  "deployer": "0xcd9282b3aA13a0e89b392af8c95fD7CdcD48a7d1",
+  "feeBps": 300,
+  "tUSD8": "0x456569838f1d43009A91ebA4263147Afd7233483",
+  "treasury": "0xcd9282b3aA13a0e89b392af8c95fD7CdcD48a7d1"
+}
