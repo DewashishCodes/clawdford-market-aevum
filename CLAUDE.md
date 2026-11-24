@@ -16,6 +16,8 @@ Read first: `docs/PROGRESS.md` (top section "Next session: start here"), then `d
 - Contracts: `cd contracts && forge test`, `forge fmt` (CI runs `forge fmt --check`), `forge build --sizes` (AgentVault is ~22.2 KB of the 24,576 limit).
 - Coverage: `forge coverage --no-match-coverage "(test|script)/" --report summary`.
 - Fork tests: `AEVUM_FORK=true forge test --match-path "test/fork/*"`.
+- E2E (spawn anvil, deploy, pay over HTTP): `FACILITATOR_E2E=anvil` in `services/facilitator`, `SDK_E2E=anvil` in `packages/sdk`, each `pnpm exec vitest run test/e2e.test.ts`. Use `fork` for the Aevum fork. Run them one at a time (both write `deployments/31337.json`). Shared setup is `packages/testkit`.
+- After contract changes: `forge build` then `pnpm export-abis` (regenerates `packages/aevum/src/abis.ts`).
 - TypeScript: `pnpm typecheck`, `pnpm test`. Shanghai scan: `pnpm check-shanghai`.
 - No `make` on the Windows dev box; root `package.json` scripts mirror the Makefile.
 
@@ -26,3 +28,7 @@ Read first: `docs/PROGRESS.md` (top section "Next session: start here"), then `d
 - Vault structs, errors and events live on `VaultBase` / `VaultChannels` / `VaultTasks`; reference them through those names, not `AgentVault.X`.
 - Bash heredocs in this environment drop backslashes; write code files with an editor tool.
 - Workspace packages export TypeScript source (`exports: ./src/index.ts`); run services with `tsx`.
+- The GitHub default branch is `main` (PRs target `main`).
+- `pnpm add` fails from the lowercase cwd path (`desktop/projects`). Run `pnpm --filter <pkg> add ...` from `C:/Users/Dewashish Lambore/Desktop/PROJECTS/aevum_hackathon`.
+- `node:sqlite` is loaded with `createRequire` because vitest 2 can't resolve it as an import (see `shortcut:` comments).
+- The x402 envelope is v2 but our payloads are vault messages (D11); streams are pay as you go (D12); the facilitator pays sellers' gas (D13); agent cards come from the identity's on-chain URI (D14).
