@@ -59,3 +59,15 @@ Stock x402 clients therefore can't pay our stalls without the buyer SDK, and our
 
 The facilitator's `/verify` runs the real vault call as an `eth_call`, so the contract decides validity (signatures, deadlines, nonces, revoke, caps). The custom error name becomes `invalidReason`.
 
+## D12. Stream calls are pay as you go (Nov 24)
+
+`claim` pays exactly the amount a voucher signs, so the seller can't settle less than a signed voucher. Signing the full possible cost up front would let the seller collect unused headroom. So each request carries a voucher for everything served before it. The seller checks the voucher covers what it is owed and that the channel has room for this request's maximum (`extra.maxAmount`). It meters the real cost and returns the new total as `owed` in `PAYMENT-RESPONSE`. The buyer refuses (`OVERCHARGED`) if one call grew `owed` by more than its quoted maximum. The seller's risk is at most the last request, and the buyer pays even that when it closes the channel (a final voucher goes to the facilitator's `/claim`).
+
+## D13. The facilitator pays sellers' gas, with a minimum claim (Nov 24)
+
+Like card processors and the hosted x402 facilitators, the platform pays settlement gas and the 3% fee covers it; batching keeps gas a tiny share of the fee. The facilitator relays `claim`, `requestCloseWithSig` and `finalizeClose` (`/claim`, `/close`), through the same daily limits and send queue as payments. To stop tiny claims costing more gas than they earn, an open channel's claim must be at least `MIN_CLAIM` (default 0.01 tUSD8). Closing channels are exempt, so a seller is never stranded. The contract still lets anyone call `claim`, so if the facilitator is down a seller can claim with its own gas.
+
+## D14. Agent card comes from the identity's on-chain URI (Nov 24)
+
+The PRD puts the card at `/.well-known/agent-card.json`, but one server hosts many stalls (PRD 8.5), so that path can't be per stall. The buyer instead reads `IdentityRegistry.getIdentity(stall.identityId).agentCardURI` (the ERC-8004 way) and fetches it. The card lists its `stallIds` and `payee`. Confirmation of Payee passes only if the quote's `payTo`, the stall's registered payee and the card's payee all match and the card lists the stall.
+
