@@ -2,7 +2,7 @@
 // Scans compiled runtime bytecode for opcodes Aevum's Shanghai EVM does not support.
 // Cancun code deploys fine on Aevum and then reverts with "invalid opcode", so we catch it at build time.
 // Written fresh for this repo (not taken from the Aevum Starter Kit).
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,6 +47,11 @@ function* artifacts(dir) {
 function main() {
   const outDir = process.argv[2] ?? "contracts/out";
   const only = (process.env.SHANGHAI_SCOPE ?? "src/").split("\\").join("/");
+  if (!existsSync(outDir)) {
+    // forge writes no out/ dir when src/ is empty; anything else means forge build was skipped.
+    console.warn(`warn: ${outDir} not found, nothing to check (run forge build if contracts exist)`);
+    return;
+  }
   let checked = 0;
   let failed = 0;
   for (const file of artifacts(outDir)) {
