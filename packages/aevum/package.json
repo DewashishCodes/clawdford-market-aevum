@@ -1,0 +1,21 @@
+{
+  "name": "@clawdford/aevum",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aevum chain definition, contract addresses, ABIs and chunked log helpers",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check-setup": "tsx src/check-setup.ts"
+  },
+  "dependencies": {
+    "viem": "^2.21.55"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
