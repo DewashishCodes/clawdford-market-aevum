@@ -124,6 +124,7 @@ abstract contract VaultBase is Ownable2Step, ReentrancyGuard, EIP712 {
     event SessionRevoked(uint256 indexed sessionId);
     event StallAllowedSet(uint256 indexed sessionId, uint256 indexed stallId, bool allowed);
     event Charged(uint256 indexed sessionId, uint256 indexed stallId, uint256 amount);
+    event Refunded(uint256 indexed sessionId, uint256 amount);
     event Paid(
         uint256 indexed receiptId,
         uint256 indexed sessionId,
@@ -361,6 +362,22 @@ abstract contract VaultBase is Ownable2Step, ReentrancyGuard, EIP712 {
         s.spentTotal = uint128(s.spentTotal + amount);
         balanceOf[owner] = bal - amount;
         emit Charged(sessionId, stallId, amount);
+    }
+
+    /// @notice Return unspent funds (closed channel, refunded escrow) to the owner and credit the session.
+    /// @dev The total is always credited. The daily counter is credited only for what was charged today by the
+    ///      same channel or task, so a refund can never open room above the daily cap for today.
+    function _refund(uint256 sessionId, uint256 amount, uint64 chargeDay, uint256 chargedThatDay) internal {
+        if (amount == 0) return;
+        Session storage s = _sessions[sessionId];
+        balanceOf[s.owner] += amount;
+        s.spentTotal -= uint128(amount); // amount never exceeds what this session was charged
+        uint64 today = uint64(block.timestamp / 1 days);
+        if (chargeDay == today && s.day == today) {
+            uint256 credit = amount < chargedThatDay ? amount : chargedThatDay;
+            s.spentToday -= uint128(credit < s.spentToday ? credit : s.spentToday);
+        }
+        emit Refunded(sessionId, amount);
     }
 
     // ------------------------------------------------------------------ exact + license
