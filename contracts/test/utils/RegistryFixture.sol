@@ -32,7 +32,9 @@ abstract contract RegistryFixture is Test {
         quoteSigner = vm.addr(quotePk);
         token = new MockTUSD8();
         identities = new IdentityRegistry();
-        stalls = new StallRegistry(ITUSD8(address(token)), identities, admin, arbiter, treasury, MIN_STAKE, COOLDOWN);
+        stalls = new StallRegistry(
+            ITUSD8(address(token)), identities, admin, arbiter, treasury, MIN_STAKE, COOLDOWN
+        );
 
         token.mint(seller, 10e6);
         vm.prank(seller);

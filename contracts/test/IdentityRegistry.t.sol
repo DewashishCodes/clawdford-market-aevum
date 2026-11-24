@@ -20,7 +20,9 @@ contract IdentityRegistryTest is Test {
 
     function test_registerAssignsSequentialIdsAndController() public {
         vm.expectEmit(true, true, false, true);
-        emit IdentityRegistry.IdentityRegistered(1, seller, "lex.example", "https://lex.example/.well-known/agent-card.json");
+        emit IdentityRegistry.IdentityRegistered(
+            1, seller, "lex.example", "https://lex.example/.well-known/agent-card.json"
+        );
         uint256 id = _register();
         assertEq(id, 1);
         assertEq(reg.identityCount(), 1);

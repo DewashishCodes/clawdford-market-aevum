@@ -16,7 +16,9 @@ contract StallRegistryTest is RegistryFixture {
         vm.expectRevert(StallRegistry.ZeroAddress.selector);
         new StallRegistry(ITUSD8(address(0)), identities, admin, arbiter, treasury, MIN_STAKE, COOLDOWN);
         vm.expectRevert(StallRegistry.ZeroAddress.selector);
-        new StallRegistry(ITUSD8(address(token)), identities, admin, address(0), treasury, MIN_STAKE, COOLDOWN);
+        new StallRegistry(
+            ITUSD8(address(token)), identities, admin, address(0), treasury, MIN_STAKE, COOLDOWN
+        );
         vm.expectRevert(StallRegistry.ZeroAddress.selector);
         new StallRegistry(ITUSD8(address(token)), identities, admin, arbiter, address(0), MIN_STAKE, COOLDOWN);
     }
@@ -74,7 +76,9 @@ contract StallRegistryTest is RegistryFixture {
 
         address stranger = makeAddr("stranger");
         vm.prank(stranger);
-        vm.expectRevert(abi.encodeWithSelector(StallRegistry.NotIdentityController.selector, sellerIdentity, stranger));
+        vm.expectRevert(
+            abi.encodeWithSelector(StallRegistry.NotIdentityController.selector, sellerIdentity, stranger)
+        );
         stalls.createStall(p);
 
         p.payee = address(0);
@@ -191,7 +195,9 @@ contract StallRegistryTest is RegistryFixture {
         vm.startPrank(seller);
         vm.expectRevert(StallRegistry.ZeroAmount.selector);
         stalls.requestUnstake(id, 0);
-        vm.expectRevert(abi.encodeWithSelector(StallRegistry.InsufficientStake.selector, MIN_STAKE + 1, MIN_STAKE));
+        vm.expectRevert(
+            abi.encodeWithSelector(StallRegistry.InsufficientStake.selector, MIN_STAKE + 1, MIN_STAKE)
+        );
         stalls.requestUnstake(id, MIN_STAKE + 1);
         vm.stopPrank();
     }
@@ -250,7 +256,9 @@ contract StallRegistryTest is RegistryFixture {
         stalls.slash(9, 1, address(0), "");
         vm.expectRevert(StallRegistry.ZeroAmount.selector);
         stalls.slash(id, 0, address(0), "");
-        vm.expectRevert(abi.encodeWithSelector(StallRegistry.InsufficientStake.selector, MIN_STAKE + 1, MIN_STAKE));
+        vm.expectRevert(
+            abi.encodeWithSelector(StallRegistry.InsufficientStake.selector, MIN_STAKE + 1, MIN_STAKE)
+        );
         stalls.slash(id, MIN_STAKE + 1, address(0), "");
         vm.stopPrank();
     }

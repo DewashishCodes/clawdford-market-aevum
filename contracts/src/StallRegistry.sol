@@ -103,7 +103,9 @@ contract StallRegistry is IStallRegistry, Ownable2Step, ReentrancyGuard {
         uint128 minStake_,
         uint64 unstakeCooldown_
     ) Ownable(admin) {
-        if (address(token_) == address(0) || address(identities_) == address(0)) revert ZeroAddress();
+        if (address(token_) == address(0) || address(identities_) == address(0)) {
+            revert ZeroAddress();
+        }
         if (arbiter_ == address(0) || treasury_ == address(0)) revert ZeroAddress();
         token = token_;
         identities = identities_;
@@ -241,7 +243,10 @@ contract StallRegistry is IStallRegistry, Ownable2Step, ReentrancyGuard {
     // ------------------------------------------------------------------ arbiter
 
     /// @notice Slash a stall's stake to the harmed buyer, or to the treasury when `recipient` is zero.
-    function slash(uint256 stallId, uint128 amount, address recipient, string calldata reason) external nonReentrant {
+    function slash(uint256 stallId, uint128 amount, address recipient, string calldata reason)
+        external
+        nonReentrant
+    {
         if (msg.sender != arbiter) revert NotArbiter(msg.sender);
         Stall storage s = _stalls[stallId];
         if (s.owner == address(0)) revert UnknownStall(stallId);

@@ -54,11 +54,18 @@ contract MockTUSD8 is ERC20, EIP712, Nonces {
 
     // ---------------------------------------------------------------- EIP-2612
 
-    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
-        external
-    {
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
         if (block.timestamp > deadline) revert PermitExpired(deadline);
-        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
+        bytes32 structHash =
+            keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
         _requireSigner(structHash, owner, v, r, s);
         _approve(owner, spender, value);
     }
@@ -76,7 +83,9 @@ contract MockTUSD8 is ERC20, EIP712, Nonces {
         bytes32 r,
         bytes32 s
     ) external {
-        _useAuthorization(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce, v, r, s);
+        _useAuthorization(
+            TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce, v, r, s
+        );
         _transfer(from, to, value);
     }
 
@@ -93,13 +102,17 @@ contract MockTUSD8 is ERC20, EIP712, Nonces {
         bytes32 s
     ) external {
         if (msg.sender != to) revert CallerMustBePayee(msg.sender, to);
-        _useAuthorization(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce, v, r, s);
+        _useAuthorization(
+            RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce, v, r, s
+        );
         _transfer(from, to, value);
     }
 
     function cancelAuthorization(address authorizer, bytes32 nonce, uint8 v, bytes32 r, bytes32 s) external {
         if (authorizationState[authorizer][nonce]) revert AuthorizationAlreadyUsed(nonce);
-        _requireSigner(keccak256(abi.encode(CANCEL_AUTHORIZATION_TYPEHASH, authorizer, nonce)), authorizer, v, r, s);
+        _requireSigner(
+            keccak256(abi.encode(CANCEL_AUTHORIZATION_TYPEHASH, authorizer, nonce)), authorizer, v, r, s
+        );
         authorizationState[authorizer][nonce] = true;
         emit AuthorizationCanceled(authorizer, nonce);
     }
@@ -119,12 +132,17 @@ contract MockTUSD8 is ERC20, EIP712, Nonces {
         if (block.timestamp <= validAfter) revert AuthorizationNotYetValid();
         if (block.timestamp >= validBefore) revert AuthorizationExpired();
         if (authorizationState[from][nonce]) revert AuthorizationAlreadyUsed(nonce);
-        _requireSigner(keccak256(abi.encode(typehash, from, to, value, validAfter, validBefore, nonce)), from, v, r, s);
+        _requireSigner(
+            keccak256(abi.encode(typehash, from, to, value, validAfter, validBefore, nonce)), from, v, r, s
+        );
         authorizationState[from][nonce] = true;
         emit AuthorizationUsed(from, nonce);
     }
 
-    function _requireSigner(bytes32 structHash, address expected, uint8 v, bytes32 r, bytes32 s) private view {
+    function _requireSigner(bytes32 structHash, address expected, uint8 v, bytes32 r, bytes32 s)
+        private
+        view
+    {
         address signer = ECDSA.recover(_hashTypedDataV4(structHash), v, r, s);
         if (signer != expected) revert InvalidSigner(signer, expected);
     }

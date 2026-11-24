@@ -20,12 +20,17 @@ contract MockTUSD8Test is Test {
         return keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), structHash));
     }
 
-    function _authSig(bytes32 typehash, address to, uint256 value, uint256 after_, uint256 before_, bytes32 nonce)
-        internal
-        view
-        returns (uint8 v, bytes32 r, bytes32 s)
-    {
-        return vm.sign(alicePk, _digest(keccak256(abi.encode(typehash, alice, to, value, after_, before_, nonce))));
+    function _authSig(
+        bytes32 typehash,
+        address to,
+        uint256 value,
+        uint256 after_,
+        uint256 before_,
+        bytes32 nonce
+    ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
+        return vm.sign(
+            alicePk, _digest(keccak256(abi.encode(typehash, alice, to, value, after_, before_, nonce)))
+        );
     }
 
     function test_metadataMatchesAevumToken() public view {
@@ -33,7 +38,9 @@ contract MockTUSD8Test is Test {
         assertEq(token.name(), "tUSD8");
         bytes32 expected = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256("tUSD8"),
                 keccak256("2"),
                 block.chainid,
@@ -106,13 +113,15 @@ contract MockTUSD8Test is Test {
 
     function test_cancelAuthorizationBlocksUse() public {
         bytes32 nonce = keccak256("n4");
-        (uint8 v, bytes32 r, bytes32 s) =
-            vm.sign(alicePk, _digest(keccak256(abi.encode(token.CANCEL_AUTHORIZATION_TYPEHASH(), alice, nonce))));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            alicePk, _digest(keccak256(abi.encode(token.CANCEL_AUTHORIZATION_TYPEHASH(), alice, nonce)))
+        );
         token.cancelAuthorization(alice, nonce, v, r, s);
         vm.expectRevert(abi.encodeWithSelector(MockTUSD8.AuthorizationAlreadyUsed.selector, nonce));
         token.cancelAuthorization(alice, nonce, v, r, s);
 
-        (v, r, s) = _authSig(token.TRANSFER_WITH_AUTHORIZATION_TYPEHASH(), bob, 1, 0, block.timestamp + 60, nonce);
+        (v, r, s) =
+            _authSig(token.TRANSFER_WITH_AUTHORIZATION_TYPEHASH(), bob, 1, 0, block.timestamp + 60, nonce);
         vm.expectRevert(abi.encodeWithSelector(MockTUSD8.AuthorizationAlreadyUsed.selector, nonce));
         token.transferWithAuthorization(alice, bob, 1, 0, block.timestamp + 60, nonce, v, r, s);
     }
@@ -120,7 +129,9 @@ contract MockTUSD8Test is Test {
     function test_wrongSignerRejected() public {
         bytes32 nonce = keccak256("n5");
         bytes32 structHash = keccak256(
-            abi.encode(token.TRANSFER_WITH_AUTHORIZATION_TYPEHASH(), alice, bob, 1, 0, block.timestamp + 60, nonce)
+            abi.encode(
+                token.TRANSFER_WITH_AUTHORIZATION_TYPEHASH(), alice, bob, 1, 0, block.timestamp + 60, nonce
+            )
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xB0B, _digest(structHash));
         vm.expectPartialRevert(MockTUSD8.InvalidSigner.selector);

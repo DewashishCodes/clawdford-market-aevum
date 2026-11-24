@@ -19,7 +19,9 @@ contract IdentityRegistry is IIdentityRegistry {
     mapping(uint256 id => Identity) private _identities;
     mapping(bytes32 domainHash => uint256 id) public idByDomainHash;
 
-    event IdentityRegistered(uint256 indexed identityId, address indexed controller, string domain, string agentCardURI);
+    event IdentityRegistered(
+        uint256 indexed identityId, address indexed controller, string domain, string agentCardURI
+    );
     event AgentCardUpdated(uint256 indexed identityId, string agentCardURI);
     event ControllerChanged(uint256 indexed identityId, address indexed previous, address indexed next);
 
@@ -38,7 +40,10 @@ contract IdentityRegistry is IIdentityRegistry {
     }
 
     /// @notice Claim a domain. Domains are case-sensitive here; clients should lowercase before registering.
-    function register(string calldata domain, string calldata agentCardURI) external returns (uint256 identityId) {
+    function register(string calldata domain, string calldata agentCardURI)
+        external
+        returns (uint256 identityId)
+    {
         if (bytes(domain).length == 0) revert EmptyDomain();
         bytes32 domainHash = keccak256(bytes(domain));
         uint256 existing = idByDomainHash[domainHash];
