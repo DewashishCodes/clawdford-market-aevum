@@ -89,13 +89,35 @@ abstract contract VaultFixture is RegistryFixture {
         });
     }
 
+    function _signedPayment(uint256 stallId, uint256 amount, uint256 sid)
+        internal
+        returns (
+            AgentVault.Quote memory q,
+            bytes memory qs,
+            AgentVault.PaymentIntent memory i,
+            bytes memory is_
+        )
+    {
+        q = _quote(stallId, amount);
+        i = _intentFor(q, sid);
+        qs = _sign(quotePk, vault.hashQuote(q));
+        is_ = _sign(agentPk, vault.hashIntent(i));
+    }
+
     /// @dev Full happy-path payment of `amount` to `stallId` from `sid`, relayed by `relayer`.
     function _pay(uint256 stallId, uint256 amount, uint256 sid) internal returns (uint256 receiptId) {
-        AgentVault.Quote memory q = _quote(stallId, amount);
-        AgentVault.PaymentIntent memory i = _intentFor(q, sid);
-        bytes memory qs = _sign(quotePk, vault.hashQuote(q));
-        bytes memory is_ = _sign(agentPk, vault.hashIntent(i));
+        (AgentVault.Quote memory q, bytes memory qs, AgentVault.PaymentIntent memory i, bytes memory is_) =
+            _signedPayment(stallId, amount, sid);
         vm.prank(relayer);
         receiptId = vault.payExact(q, qs, i, is_);
+    }
+
+    /// @dev Same as `_pay` but expects payExact itself to revert with `err`.
+    function _payReverts(uint256 stallId, uint256 amount, uint256 sid, bytes memory err) internal {
+        (AgentVault.Quote memory q, bytes memory qs, AgentVault.PaymentIntent memory i, bytes memory is_) =
+            _signedPayment(stallId, amount, sid);
+        vm.prank(relayer);
+        vm.expectRevert(err);
+        vault.payExact(q, qs, i, is_);
     }
 }
