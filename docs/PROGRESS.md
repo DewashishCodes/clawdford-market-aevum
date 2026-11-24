@@ -4,9 +4,18 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-1. **Phase 7** (`phase/7-stalls`): demo stalls 1 to 8 in `services/sellers` (one Express server, one `createSeller` per stall, `serveAgentCard` per identity) and a seed script that registers identities with an http `agentCardURI`, stalls and small stakes. Stall 8 (Shady) quotes above its on-chain price and points its card at a different payee; the buyer SDK already refuses both (`OVERPRICED`, `PAYEE_MISMATCH`). Start from `packages/sdk/test/e2e.test.ts`, which already runs one stall per mode.
-2. Fund the facilitator wallet `0x1f95...4FCc` (key is in `.env`, balance 0): the faucet needs a browser wallet, or send about 0.3 tQDAY from the deployer. Needed before the first live run.
-3. Still open from phase 5: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `trust proxy` behind a proxy (phase 10), the PRD questions in `docs/QDAY_NOTES.md`.
+State on Nov 24 evening: phases 0 to 6 merged (PRs #1 to #8), `main` is clean, CI green (contracts, TypeScript, e2e on anvil). Protocol live on Aevum, addresses in the README.
+
+1. **Fund the facilitator wallet first** (needed for any live run on Aevum). `FACILITATOR_PRIVATE_KEY` is in `.env`, address `0x1f95D77ba8FA26CC4B1b19A321b193487ff04FCc`, balance 0. Pick one:
+   - Quickest: send 0.3 tQDAY from the deployer (has about 0.99). Load `.env`, then
+     `cast send 0x1f95D77ba8FA26CC4B1b19A321b193487ff04FCc --value 0.3ether --rpc-url https://rpc-test.qday.info --legacy --private-key $DEPLOYER_PRIVATE_KEY`.
+   - Faucet: https://faucet.qday.info/en needs a browser wallet. In MetaMask: add network (RPC `https://rpc-test.qday.info`, chain ID 44005, symbol tQDAY, explorer `https://explorer-test.qday.info`), then account list, "Add wallet", "Import an account", paste the key from `.env` (never into chat), connect on the faucet and claim.
+   - Check with `pnpm check-setup`: the facilitator row should show tQDAY.
+2. **Phase 7** (`phase/7-stalls`): demo stalls 1 to 8 (PRD 8.5) in `services/sellers`: one Express server, one `createSeller` per stall, `serveAgentCard` per identity, plus a seed script that registers identities (with an http `agentCardURI`, see D14), stalls and small stakes. Stall 8 (Shady) quotes above its on-chain price and points its card at a different payee; the buyer SDK already refuses both (`OVERPRICED`, `PAYEE_MISMATCH`). Start from `packages/sdk/test/e2e.test.ts`, which already runs one stall per mode with `paid()`.
+   - Before starting, decide with the user: LLM stalls need an OpenAI-compatible endpoint (PRD default: local Ollama `qwen2.5`). Check whether Ollama is installed or use a hosted key in `.env`.
+   - Seller keys: the seed script needs a funded seller key (stake 0.25 tUSD8 per stall, plus gas). `.env.example` has `SELLER_PRIVATE_KEY`; the user's `.env` doesn't yet.
+   - Done when workflows 2 to 6 (PRD section 9) pass end to end on the fork.
+3. Still open: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `app.set("trust proxy", ...)` behind a proxy (phase 10), PRD questions in `docs/QDAY_NOTES.md` (ask on the QDay Discord).
 
 ## Phase 6: buyer and seller SDKs (Nov 24)
 
