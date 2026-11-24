@@ -44,3 +44,18 @@ When a channel closes or a task is refunded, the full amount goes back to the ow
 ## D10. Agents act gaslessly by signature (Nov 24)
 
 Every agent action has a signed form a relayer can submit: `PaymentIntent`, `OpenChannel`, `TopUp`, `Voucher`, `CloseChannel`, `CreateTask`, `ApproveTask`. All share one nonce space per session. Owner actions (`revokeSession`, `dispute`, `withdraw`) are normal transactions from the owner wallet, so the kill switch never depends on the facilitator.
+
+## D11. x402 v2 envelope, vault payloads inside (Nov 24)
+
+We follow x402 v2 for everything a generic client sees: the `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE` and `PAYMENT-RESPONSE` headers, `x402Version: 2`, CAIP-2 network `eip155:44005`, the `PaymentRequired` / `PaymentPayload` / `SettlementResponse` field names and the facilitator `/verify`, `/settle`, `/supported` bodies.
+
+The payload inside differs from stock x402. Stock EVM `exact` moves tokens with EIP-3009 straight from the payer's wallet. Ours spends from `AgentVault` under session caps, so:
+
+- `exact`: `accepted.extra` carries the seller-signed `Quote` and `stallId`; the payload is the agent-signed `PaymentIntent`.
+- `batch-settlement` (stream): the payload is an agent-signed `OpenChannel` or `TopUp`; per-call `Voucher`s go to the seller, who claims them in batches.
+- `escrow` (task): the payload is an agent-signed `CreateTask`. The PRD calls this scheme `escrow`; v2 treats escrow as a flow, but a separate scheme name keeps our payload from being mistaken for stock `auth-capture`.
+
+Stock x402 clients therefore can't pay our stalls without the buyer SDK, and our clients can't pay stock x402 sellers. That's fine for the hackathon: the session caps are the point of the product. `amount` in requirements is a decimal string in tUSD8 base units (6 decimals), as in the spec.
+
+The facilitator's `/verify` runs the real vault call as an `eth_call`, so the contract decides validity (signatures, deadlines, nonces, revoke, caps). The custom error name becomes `invalidReason`.
+

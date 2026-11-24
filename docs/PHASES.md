@@ -15,7 +15,7 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/): `fe
 | 2 | M1 | `phase/2-vault-core` | Nov 26 | `AgentVault` balances (approve, permit, 3009), sessions, `_charge`, receipts, `payExact` + license | unit + signature tests green | done (PR #3) |
 | 3 | M1 | `phase/3-vault-modes` | Nov 27 | stream channels (open, claim, topUp, close, revoke behaviour) and task escrow (submit, approve, autoRelease, dispute, resolve, cancel) | unit tests green | done (PR #4) |
 | 4 | M1 | `phase/4-reputation-deploy` | Nov 28 | `ReputationRegistry`, fuzz + invariant tests, fork tests on real tUSD8, `Deploy.s.sol`, deploy to Aevum | coverage at least 90%, `deployments/44005.json` | done (PR #5, deploy PR #6) |
-| 5 | M2 | `phase/5-x402-facilitator` | Nov 28 to 30 | `packages/x402` (schemas, headers, EIP-712), facilitator (`/supported`, `/verify`, `/settle`, `/activity`, SQLite rails) | vitest green, exact pay works on fork | todo |
+| 5 | M2 | `phase/5-x402-facilitator` | Nov 28 to 30 | `packages/x402` (schemas, headers, EIP-712), facilitator (`/supported`, `/verify`, `/settle`, `/activity`, SQLite rails) | vitest green, exact pay works on fork | done (PR #7) |
 | 6 | M2 | `phase/6-sdk` | Nov 30 to Dec 1 | buyer SDK (`payingFetch`, CoP, price guard, channels) and seller SDK (`paid()`, voucher store, settler, agent card) | vitest green | todo |
 | 7 | M2 | `phase/7-stalls` | Dec 1 to 2 | demo stalls 1 to 8 + seed script | workflows 2 to 6 pass end to end on fork | todo |
 | 8 | M3 | `phase/8-mcp` | Dec 2 to 3 | MCP server with all tools + `mcp/README.md` | Claude Code completes the demo prompt on fork | todo |

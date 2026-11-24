@@ -19,3 +19,26 @@ Facts checked against live sources. Answers to PRD section 15 go here.
 2. Official addresses for stablecoin paymaster, agent wallet / session key contracts, ERC-8004 registries? (pending)
 3. Is `bundler.qday.info` the supported ERC-4337 bundler? (pending, not needed for MVP)
 4. Exact DoraHacks submission form fields? (pending)
+
+## x402 spec (checked Nov 24, PRD 8.1 [VERIFY])
+
+Sources: `specs/x402-specification-v2.md`, `specs/transports-v2/http.md` and `specs/schemes/exact/scheme_exact_evm.md` in github.com/coinbase/x402 (the repo now points to github.com/x402-foundation/x402), plus docs.cdp.coinbase.com/x402. Newest version found: v2 (dated 2025-12-09).
+
+| Item | v2 (what we use) | v1 (old) |
+|---|---|---|
+| `x402Version` | `2` | `1` |
+| 402 requirements | header `PAYMENT-REQUIRED`, base64 JSON `PaymentRequired` | JSON body |
+| client payment | header `PAYMENT-SIGNATURE`, base64 JSON `PaymentPayload` | `X-PAYMENT` |
+| settlement result | header `PAYMENT-RESPONSE`, base64 JSON `SettlementResponse` | `X-PAYMENT-RESPONSE` |
+| network id | CAIP-2, e.g. `eip155:8453`; ours is `eip155:44005` | names like `base-sepolia` |
+
+Shapes (v2):
+
+- `PaymentRequired`: `x402Version`, `error?`, `resource` (`url`, `description?`, `mimeType?`, ...), `accepts[]`, `extensions?`.
+- `PaymentRequirements`: `scheme`, `network`, `amount`, `asset`, `payTo`, `maxTimeoutSeconds`, `extra`.
+- `PaymentPayload`: `x402Version`, `resource?`, `accepted` (the chosen requirements, echoed back), `payload` (scheme specific), `extensions?`.
+- `SettlementResponse`: `success`, `errorReason?`, `payer?`, `transaction` (empty string if nothing was sent), `network`, `amount?`.
+- Facilitator: `POST /verify` and `POST /settle` take `{ x402Version, paymentPayload, paymentRequirements }`. Verify answers `{ isValid, invalidReason?, payer? }`; settle answers a `SettlementResponse`. `GET /supported` answers `{ kinds: [{ x402Version, scheme, network, extra? }], extensions, signers }`.
+- Schemes named in v2: `exact`, `upto`, `batch-settlement`, `auth-capture`; flows `authorization`, `upfront`, `escrow` via `extra.paymentFlow`. The stock EVM `exact` payload is an EIP-3009 `transferWithAuthorization` (`payload.signature` + `payload.authorization`).
+- Not confirmed: whether base64 is standard or URL safe (we use standard and accept both), the CDP facilitator's REST details. How we differ from stock x402 is in D11 in `docs/DECISIONS.md`.
+

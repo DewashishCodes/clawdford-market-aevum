@@ -4,7 +4,7 @@
 AEVUM_RPC ?= https://rpc-test.qday.info
 FORK_CHAIN_ID ?= 440050
 
-.PHONY: install build test test-contracts test-ts check-shanghai coverage anvil fork deploy-fork deploy-aevum check-setup fmt
+.PHONY: install build test test-contracts test-ts check-shanghai coverage anvil fork deploy-fork deploy-aevum check-setup fmt facilitator e2e-anvil e2e-fork
 
 install:
 	pnpm install
@@ -50,3 +50,14 @@ check-setup:
 
 fmt:
 	cd contracts && forge fmt
+
+# Facilitator (reads the root .env: FACILITATOR_PRIVATE_KEY, CHAIN_ID).
+facilitator:
+	pnpm --filter @clawdford/facilitator start
+
+# End-to-end facilitator tests: spawn anvil on :8546, run Deploy.s.sol, pay through HTTP.
+e2e-anvil:
+	cd services/facilitator && FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts
+
+e2e-fork:
+	cd services/facilitator && FACILITATOR_E2E=fork pnpm exec vitest run test/e2e.test.ts
