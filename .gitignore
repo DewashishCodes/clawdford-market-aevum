@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+contracts/broadcast/*/440050/
+lcov.info
+coverage/
+
+# local data
+*.sqlite
+*.sqlite-journal
+*.db
+
+# secrets: never commit keys
+.env
+.env.*
+!.env.example
+
+# os / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
