@@ -4,15 +4,16 @@ pragma solidity 0.8.24;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {VaultFixture} from "./utils/VaultFixture.sol";
 import {AgentVault} from "../src/AgentVault.sol";
+import {VaultBase} from "../src/vault/VaultBase.sol";
 import {ITUSD8} from "../src/interfaces/ITUSD8.sol";
 
 contract AgentVaultBalancesTest is VaultFixture {
     function test_constructorValidation() public {
-        vm.expectRevert(AgentVault.ZeroAddress.selector);
+        vm.expectRevert(VaultBase.ZeroAddress.selector);
         new AgentVault(ITUSD8(address(0)), stalls, admin, treasury, arbiter, FEE_BPS);
-        vm.expectRevert(AgentVault.ZeroAddress.selector);
+        vm.expectRevert(VaultBase.ZeroAddress.selector);
         new AgentVault(ITUSD8(address(token)), stalls, admin, address(0), arbiter, FEE_BPS);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.FeeTooHigh.selector, 1001));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.FeeTooHigh.selector, 1001));
         new AgentVault(ITUSD8(address(token)), stalls, admin, treasury, arbiter, 1001);
     }
 
@@ -26,11 +27,11 @@ contract AgentVaultBalancesTest is VaultFixture {
         assertEq(token.balanceOf(owner), 8e6);
 
         vm.startPrank(owner);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.InsufficientBalance.selector, 3e6, 2e6));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.InsufficientBalance.selector, 3e6, 2e6));
         vault.withdraw(3e6);
-        vm.expectRevert(AgentVault.ZeroAmount.selector);
+        vm.expectRevert(VaultBase.ZeroAmount.selector);
         vault.withdraw(0);
-        vm.expectRevert(AgentVault.ZeroAmount.selector);
+        vm.expectRevert(VaultBase.ZeroAmount.selector);
         vault.deposit(0);
         vm.stopPrank();
     }
@@ -68,20 +69,20 @@ contract AgentVaultBalancesTest is VaultFixture {
         assertEq(vault.balanceOf(o), 5e5);
         assertEq(vault.balanceOf(relayer), 0);
 
-        vm.expectRevert(AgentVault.ZeroAmount.selector);
+        vm.expectRevert(VaultBase.ZeroAmount.selector);
         vault.depositWithAuthorization(o, 0, 0, validBefore, nonce, v, r, s);
     }
 
     function test_adminSetters() public {
         vm.startPrank(admin);
         vault.setFeeBps(1000);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.FeeTooHigh.selector, 1001));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.FeeTooHigh.selector, 1001));
         vault.setFeeBps(1001);
         vault.setTreasury(address(1));
         vault.setArbiter(address(2));
-        vm.expectRevert(AgentVault.ZeroAddress.selector);
+        vm.expectRevert(VaultBase.ZeroAddress.selector);
         vault.setTreasury(address(0));
-        vm.expectRevert(AgentVault.ZeroAddress.selector);
+        vm.expectRevert(VaultBase.ZeroAddress.selector);
         vault.setArbiter(address(0));
         vm.stopPrank();
         assertEq(vault.feeBps(), 1000);

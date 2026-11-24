@@ -28,3 +28,19 @@ Only the session owner can call `updateCaps`, so a "tighten only" rule would pro
 - `PaymentIntent.quoteHash` is the full EIP-712 digest of the quote (`vault.hashQuote(q)`), the same value the seller signs. Clients compute it with viem `hashTypedData`.
 - `Quote.buyerSession = 0` means any session may pay the quote. Sellers that know the session from the request can pin it.
 - Each quote can be paid once (`quoteUsed`), and each intent nonce once per session (`intentNonceUsed`). A second settle of the same intent reverts, and the facilitator maps that to the earlier receipt for idempotency.
+
+## D7. Vault split into modules, one deployed contract (Nov 24)
+
+The PRD keeps channels and escrow inside `AgentVault`. We keep that (one address, one balance sheet, one `_charge`) but split the source into `vault/VaultBase.sol` (balances, sessions, `_charge`, exact + license), `vault/VaultChannels.sol` (stream) and `vault/VaultTasks.sol` (task). `AgentVault` inherits both modes. Runtime size is 22,176 bytes, under the EIP-170 limit of 24,576; CI's `forge build --sizes` fails if it ever grows past it. If it does, the first lever is a lower `optimizer_runs`.
+
+## D8. Payee fixed when a channel or task is opened (Nov 24)
+
+Channels and tasks copy the stall's payee at creation. A seller who later changes the stall payee cannot redirect money the buyer already committed. This keeps Confirmation of Payee true for the whole life of the channel or task.
+
+## D9. Refunds never reopen today's cap (Nov 24)
+
+When a channel closes or a task is refunded, the full amount goes back to the owner and to `spentTotal`. `spentToday` is only credited for what that same channel or task was charged today. A deposit made yesterday and refunded today does not create extra room under today's daily cap.
+
+## D10. Agents act gaslessly by signature (Nov 24)
+
+Every agent action has a signed form a relayer can submit: `PaymentIntent`, `OpenChannel`, `TopUp`, `Voucher`, `CloseChannel`, `CreateTask`, `ApproveTask`. All share one nonce space per session. Owner actions (`revokeSession`, `dispute`, `withdraw`) are normal transactions from the owner wallet, so the kill switch never depends on the facilitator.

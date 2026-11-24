@@ -2,11 +2,11 @@
 pragma solidity 0.8.24;
 
 import {VaultFixture} from "./utils/VaultFixture.sol";
-import {AgentVault} from "../src/AgentVault.sol";
+import {VaultBase} from "../src/vault/VaultBase.sol";
 
 contract AgentVaultSessionsTest is VaultFixture {
     function test_createSessionStoresRules() public view {
-        AgentVault.Session memory s = vault.getSession(sessionId);
+        VaultBase.Session memory s = vault.getSession(sessionId);
         assertEq(s.owner, owner);
         assertEq(s.agentKey, agent);
         assertEq(s.perPaymentCap, 200_000);
@@ -20,29 +20,29 @@ contract AgentVaultSessionsTest is VaultFixture {
     }
 
     function test_createSessionValidation() public {
-        AgentVault.SessionParams memory p = AgentVault.SessionParams(address(0), 1, 1, 1, 0, 1, false);
+        VaultBase.SessionParams memory p = VaultBase.SessionParams(address(0), 1, 1, 1, 0, 1, false);
         p.expiry = uint64(block.timestamp + 1);
-        vm.expectRevert(AgentVault.ZeroAddress.selector);
+        vm.expectRevert(VaultBase.ZeroAddress.selector);
         vault.createSession(p);
 
         p.agentKey = agent;
         p.expiry = uint64(block.timestamp);
-        vm.expectRevert(AgentVault.InvalidExpiry.selector);
+        vm.expectRevert(VaultBase.InvalidExpiry.selector);
         vault.createSession(p);
     }
 
     function test_updateCapsOwnerOnly() public {
         vm.prank(agent);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.NotSessionOwner.selector, sessionId, agent));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.NotSessionOwner.selector, sessionId, agent));
         vault.updateCaps(sessionId, 1, 1, 1, uint64(block.timestamp + 1));
 
         vm.startPrank(owner);
-        vm.expectRevert(AgentVault.InvalidExpiry.selector);
+        vm.expectRevert(VaultBase.InvalidExpiry.selector);
         vault.updateCaps(sessionId, 1, 1, 1, uint64(block.timestamp));
         vault.updateCaps(sessionId, 5, 6, 7, uint64(block.timestamp + 60));
         vm.stopPrank();
 
-        AgentVault.Session memory s = vault.getSession(sessionId);
+        VaultBase.Session memory s = vault.getSession(sessionId);
         assertEq(s.perPaymentCap, 5);
         assertEq(s.dailyCap, 6);
         assertEq(s.totalCap, 7);
@@ -50,7 +50,7 @@ contract AgentVaultSessionsTest is VaultFixture {
 
     function test_revokeIsFinal() public {
         vm.prank(agent);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.NotSessionOwner.selector, sessionId, agent));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.NotSessionOwner.selector, sessionId, agent));
         vault.revokeSession(sessionId);
 
         vm.prank(owner);
@@ -60,16 +60,16 @@ contract AgentVaultSessionsTest is VaultFixture {
         assertEq(today + total, 0);
 
         vm.startPrank(owner);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.RevokedSession.selector, sessionId));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.RevokedSession.selector, sessionId));
         vault.revokeSession(sessionId);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.RevokedSession.selector, sessionId));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.RevokedSession.selector, sessionId));
         vault.updateCaps(sessionId, 1, 1, 1, uint64(block.timestamp + 60));
         vm.stopPrank();
     }
 
     function test_unknownSession() public {
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.UnknownSession.selector, 99));
+        vm.expectRevert(abi.encodeWithSelector(VaultBase.UnknownSession.selector, 99));
         vault.revokeSession(99);
         (uint256 today, uint256 total) = vault.remaining(99);
         assertEq(today + total, 0);
