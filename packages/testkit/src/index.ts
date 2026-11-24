@@ -28,6 +28,8 @@ const at = (i: number) => mnemonicToAccount(MNEMONIC, { addressIndex: i });
 /** Session caps used by every test chain (tUSD8 base units). */
 export const SESSION = { perPaymentCap: 50_000n, dailyCap: 200_000n, totalCap: 300_000n };
 /** On-chain unit prices of the test stalls. */
+/** Channel close window on test chains (seconds). */
+export const CHALLENGE_WINDOW = 5;
 export const PRICES = { exact: 10_000n, stream: 1_000n, task: 30_000n, license: 50_000n };
 
 function run(cmd: string, args: string[], cwd: string, env: Record<string, string>) {
@@ -52,12 +54,13 @@ export async function startChain(opts: { fork: boolean; port: number }) {
   const pub = createPublicClient({ chain, transport: http(rpc) });
   const test = createTestClient({ chain, mode: "anvil", transport: http(rpc) });
   const wallet = (account: Account) => createWalletClient({ chain, transport: http(rpc), account });
+  const agentKey = generatePrivateKey(); // the session key an agent (MCP server) would hold; no gas, only signs
   const accounts = {
     deployer: at(0),
     seller: at(1),
     owner: at(2),
     facilitator: at(3),
-    agent: privateKeyToAccount(generatePrivateKey()) as PrivateKeyAccount, // holds no gas, only signs
+    agent: privateKeyToAccount(agentKey) as PrivateKeyAccount,
   };
 
   const forkArgs = opts.fork ? ["--fork-url", "https://rpc-test.qday.info", "--chain-id", "440050"] : [];
@@ -86,6 +89,7 @@ export async function startChain(opts: { fork: boolean; port: number }) {
   const contracts = fileURLToPath(new URL("../../../contracts", import.meta.url));
   await run("forge", ["script", "script/Deploy.s.sol", "--rpc-url", rpc, "--broadcast", "--legacy"], contracts, {
     DEPLOYER_PRIVATE_KEY: PK0,
+    CHALLENGE_WINDOW: String(CHALLENGE_WINDOW), // short, so tests barely move chain time away from the real clock
   });
   const d: Deployment = loadDeployment(chainId);
   const { seller, owner, agent, deployer } = accounts;
@@ -134,6 +138,8 @@ export async function startChain(opts: { fork: boolean; port: number }) {
     d,
     stall,
     sessionId,
+    identityId,
+    agentKey,
     send,
     now,
     balanceOf: async (who: Address) =>

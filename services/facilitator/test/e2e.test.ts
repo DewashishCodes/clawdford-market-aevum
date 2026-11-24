@@ -5,7 +5,7 @@ import type { Server } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { keccak256, toHex, type Hex } from "viem";
 import { agentVaultAbi } from "@clawdford/aevum";
-import { startChain, type TestChain } from "@clawdford/testkit";
+import { CHALLENGE_WINDOW, startChain, type TestChain } from "@clawdford/testkit";
 import {
   PaymentPayload,
   PaymentRequired,
@@ -146,7 +146,7 @@ describe.skipIf(!MODE)(`facilitator e2e on ${MODE}`, () => {
     expect(await post("/claim", await voucher("13000"))).toMatchObject({ success: true, amount: "1000" });
     expect(await post("/close", { channelId: "1" })).toMatchObject({ success: false, errorReason: "ChallengeWindowActive" });
 
-    await t.warp(601);
+    await t.warp(CHALLENGE_WINDOW + 1);
     const before = await t.pub.readContract({ address: t.d.AgentVault, abi: agentVaultAbi, functionName: "balanceOf", args: [t.accounts.owner.address] });
     expect(await post("/close", { channelId: "1" })).toMatchObject({ success: true, amount: "12000" });
     const after = await t.pub.readContract({ address: t.d.AgentVault, abi: agentVaultAbi, functionName: "balanceOf", args: [t.accounts.owner.address] });
