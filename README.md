@@ -50,7 +50,9 @@ Deploy block 4,018,135, from source commit [`09a27a4`](https://github.com/Dewash
 
 ```
 contracts/          Foundry project (src, test, script); Shanghai, OZ 5.1.0
-packages/aevum/     viem chain defs, tUSD8 constants, getLogsChunked, check-setup
+packages/aevum/     viem chain defs, tUSD8 constants, ABIs, deployments loader, getLogsChunked, check-setup
+packages/x402/      x402 v2 schemas, header codec, vault EIP-712 types
+services/facilitator/  /supported /verify /settle /activity, SQLite rails
 tools/              Shanghai bytecode checker
 docs/               PRD, phases, progress, decisions, QDay notes
 deployments/        <chainId>.json written by the deploy script
@@ -68,11 +70,16 @@ pnpm check-shanghai                              # build + Cancun opcode scan
 pnpm check-setup                                 # Aevum RPC + balances for keys in .env
 ```
 
+Facilitator end to end (spawns anvil on port 8546, deploys, pays over HTTP with x402 headers), from `services/facilitator/`:
+`FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts`, or `FACILITATOR_E2E=fork` for a fork of Aevum with the real tUSD8.
+
+Run the facilitator: set `FACILITATOR_PRIVATE_KEY` (and `CHAIN_ID`) in `.env`, then `pnpm --filter @clawdford/facilitator start` (port 4020).
+
 Fork tests against real tUSD8: `cd contracts && AEVUM_FORK=true forge test --match-path "test/fork/*"`.
 
 Local deploy: `anvil --hardfork shanghai`, then `DEPLOYER_PRIVATE_KEY=<anvil key> forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --legacy` from `contracts/`.
 
-With make: `make test`, `make fork`, `make deploy-fork`, `make deploy-aevum` (reads the root `.env`).
+With make: `make test`, `make fork`, `make deploy-fork`, `make deploy-aevum`, `make facilitator`, `make e2e-anvil`, `make e2e-fork` (reads the root `.env`).
 
 ## Docs
 
