@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {RegistryFixture} from "./RegistryFixture.sol";
 import {AgentVault} from "../../src/AgentVault.sol";
+import {VaultBase} from "../../src/vault/VaultBase.sol";
 import {ITUSD8} from "../../src/interfaces/ITUSD8.sol";
 
 /// @notice Registry fixture plus a vault, a funded owner, an agent session and an `exact` stall.
@@ -49,7 +50,7 @@ abstract contract VaultFixture is RegistryFixture {
     {
         vm.prank(owner);
         id = vault.createSession(
-            AgentVault.SessionParams({
+            VaultBase.SessionParams({
                 agentKey: agent,
                 perPaymentCap: per,
                 dailyCap: daily,
@@ -66,8 +67,8 @@ abstract contract VaultFixture is RegistryFixture {
         return abi.encodePacked(r, s, v);
     }
 
-    function _quote(uint256 stallId, uint256 amount) internal returns (AgentVault.Quote memory q) {
-        q = AgentVault.Quote({
+    function _quote(uint256 stallId, uint256 amount) internal returns (VaultBase.Quote memory q) {
+        q = VaultBase.Quote({
             stallId: stallId,
             amount: amount,
             resourceHash: keccak256("POST /s/search"),
@@ -77,11 +78,11 @@ abstract contract VaultFixture is RegistryFixture {
         });
     }
 
-    function _intentFor(AgentVault.Quote memory q, uint256 sid)
+    function _intentFor(VaultBase.Quote memory q, uint256 sid)
         internal
-        returns (AgentVault.PaymentIntent memory)
+        returns (VaultBase.PaymentIntent memory)
     {
-        return AgentVault.PaymentIntent({
+        return VaultBase.PaymentIntent({
             quoteHash: vault.hashQuote(q),
             sessionId: sid,
             validBefore: block.timestamp + 5 minutes,
@@ -92,9 +93,9 @@ abstract contract VaultFixture is RegistryFixture {
     function _signedPayment(uint256 stallId, uint256 amount, uint256 sid)
         internal
         returns (
-            AgentVault.Quote memory q,
+            VaultBase.Quote memory q,
             bytes memory qs,
-            AgentVault.PaymentIntent memory i,
+            VaultBase.PaymentIntent memory i,
             bytes memory is_
         )
     {
@@ -106,7 +107,7 @@ abstract contract VaultFixture is RegistryFixture {
 
     /// @dev Full happy-path payment of `amount` to `stallId` from `sid`, relayed by `relayer`.
     function _pay(uint256 stallId, uint256 amount, uint256 sid) internal returns (uint256 receiptId) {
-        (AgentVault.Quote memory q, bytes memory qs, AgentVault.PaymentIntent memory i, bytes memory is_) =
+        (VaultBase.Quote memory q, bytes memory qs, VaultBase.PaymentIntent memory i, bytes memory is_) =
             _signedPayment(stallId, amount, sid);
         vm.prank(relayer);
         receiptId = vault.payExact(q, qs, i, is_);
@@ -114,7 +115,7 @@ abstract contract VaultFixture is RegistryFixture {
 
     /// @dev Same as `_pay` but expects payExact itself to revert with `err`.
     function _payReverts(uint256 stallId, uint256 amount, uint256 sid, bytes memory err) internal {
-        (AgentVault.Quote memory q, bytes memory qs, AgentVault.PaymentIntent memory i, bytes memory is_) =
+        (VaultBase.Quote memory q, bytes memory qs, VaultBase.PaymentIntent memory i, bytes memory is_) =
             _signedPayment(stallId, amount, sid);
         vm.prank(relayer);
         vm.expectRevert(err);

@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import {VaultFixture} from "./utils/VaultFixture.sol";
-import {AgentVault} from "../src/AgentVault.sol";
+import {VaultBase} from "../src/vault/VaultBase.sol";
 
 /// @notice Every rule `_charge` enforces, exercised through payExact.
 contract AgentVaultChargeTest is VaultFixture {
@@ -12,11 +12,11 @@ contract AgentVaultChargeTest is VaultFixture {
         assertEq(vault.balanceOf(owner), 3e6 - 100_000);
         assertEq(token.balanceOf(payee), 97_000);
         assertEq(token.balanceOf(treasury), 3_000);
-        AgentVault.Session memory s = vault.getSession(sessionId);
+        VaultBase.Session memory s = vault.getSession(sessionId);
         assertEq(s.spentTotal, 100_000);
         assertEq(s.spentToday, 100_000);
 
-        AgentVault.Receipt memory r = vault.getReceipt(rid);
+        VaultBase.Receipt memory r = vault.getReceipt(rid);
         assertEq(r.sessionId, sessionId);
         assertEq(r.stallId, exactStall);
         assertEq(r.amount, 100_000);
@@ -27,14 +27,14 @@ contract AgentVaultChargeTest is VaultFixture {
         vm.prank(owner);
         vault.revokeSession(sessionId);
         _payReverts(
-            exactStall, 1000, sessionId, abi.encodeWithSelector(AgentVault.RevokedSession.selector, sessionId)
+            exactStall, 1000, sessionId, abi.encodeWithSelector(VaultBase.RevokedSession.selector, sessionId)
         );
     }
 
     function test_expiredSessionCannotPay() public {
         vm.warp(block.timestamp + 2 hours);
         _payReverts(
-            exactStall, 1000, sessionId, abi.encodeWithSelector(AgentVault.SessionExpired.selector, sessionId)
+            exactStall, 1000, sessionId, abi.encodeWithSelector(VaultBase.SessionExpired.selector, sessionId)
         );
     }
 
@@ -42,7 +42,7 @@ contract AgentVaultChargeTest is VaultFixture {
         vm.prank(seller);
         stalls.setActive(exactStall, false);
         _payReverts(
-            exactStall, 1000, sessionId, abi.encodeWithSelector(AgentVault.StallInactive.selector, exactStall)
+            exactStall, 1000, sessionId, abi.encodeWithSelector(VaultBase.StallInactive.selector, exactStall)
         );
     }
 
@@ -52,7 +52,7 @@ contract AgentVaultChargeTest is VaultFixture {
             toolStall,
             1000,
             sessionId,
-            abi.encodeWithSelector(AgentVault.CategoryNotAllowed.selector, sessionId, CAT_TOOL)
+            abi.encodeWithSelector(VaultBase.CategoryNotAllowed.selector, sessionId, CAT_TOOL)
         );
     }
 
@@ -65,7 +65,7 @@ contract AgentVaultChargeTest is VaultFixture {
             exactStall,
             1000,
             sessionId,
-            abi.encodeWithSelector(AgentVault.StallNotAllowed.selector, sessionId, exactStall)
+            abi.encodeWithSelector(VaultBase.StallNotAllowed.selector, sessionId, exactStall)
         );
         _pay(other, 1000, sessionId);
     }
@@ -75,13 +75,13 @@ contract AgentVaultChargeTest is VaultFixture {
             exactStall,
             200_001,
             sessionId,
-            abi.encodeWithSelector(AgentVault.PerPaymentCapExceeded.selector, 200_001, 200_000)
+            abi.encodeWithSelector(VaultBase.PerPaymentCapExceeded.selector, 200_001, 200_000)
         );
         _pay(exactStall, 200_000, sessionId);
     }
 
     function test_zeroAmountRejected() public {
-        _payReverts(exactStall, 0, sessionId, abi.encodeWithSelector(AgentVault.ZeroAmount.selector));
+        _payReverts(exactStall, 0, sessionId, abi.encodeWithSelector(VaultBase.ZeroAmount.selector));
     }
 
     function test_dailyCapResetsAtUtcMidnight() public {
@@ -91,7 +91,7 @@ contract AgentVaultChargeTest is VaultFixture {
         _pay(exactStall, 200_000, sid);
         _pay(exactStall, 100_000, sid);
         _payReverts(
-            exactStall, 1, sid, abi.encodeWithSelector(AgentVault.DailyCapExceeded.selector, 300_001, 300_000)
+            exactStall, 1, sid, abi.encodeWithSelector(VaultBase.DailyCapExceeded.selector, 300_001, 300_000)
         );
 
         vm.warp(11 days); // next UTC day
@@ -109,7 +109,7 @@ contract AgentVaultChargeTest is VaultFixture {
             exactStall,
             50_001,
             sid,
-            abi.encodeWithSelector(AgentVault.TotalCapExceeded.selector, 250_001, 250_000)
+            abi.encodeWithSelector(VaultBase.TotalCapExceeded.selector, 250_001, 250_000)
         );
         _pay(exactStall, 50_000, sid);
         (, uint256 total) = vault.remaining(sid);
@@ -123,7 +123,7 @@ contract AgentVaultChargeTest is VaultFixture {
             exactStall,
             1001,
             sessionId,
-            abi.encodeWithSelector(AgentVault.InsufficientBalance.selector, 1001, 1000)
+            abi.encodeWithSelector(VaultBase.InsufficientBalance.selector, 1001, 1000)
         );
     }
 
@@ -134,7 +134,7 @@ contract AgentVaultChargeTest is VaultFixture {
             exactStall,
             11,
             sessionId,
-            abi.encodeWithSelector(AgentVault.PerPaymentCapExceeded.selector, 11, 10)
+            abi.encodeWithSelector(VaultBase.PerPaymentCapExceeded.selector, 11, 10)
         );
     }
 
