@@ -1,0 +1,17 @@
+{
+  "name": "@clawdford/testkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Test-only helpers: spawn anvil (plain or Aevum fork), deploy, register stalls, fund a session",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clawdford/aevum": "workspace:*",
+    "viem": "^2.58.6"
+  }
+}

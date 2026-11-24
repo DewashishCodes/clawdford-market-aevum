@@ -19,6 +19,7 @@
     "viem": "^2.58.6"
   },
   "devDependencies": {
+    "@clawdford/testkit": "workspace:*",
     "@types/express": "^5.0.6",
     "tsx": "^4.23.15"
   }
