@@ -50,3 +50,30 @@ jobs:
         run: node --test tools/check-shanghai.test.mjs
       - run: pnpm typecheck
       - run: pnpm test
+
+  e2e:
+    name: E2E (anvil, facilitator + SDK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build contracts
+        working-directory: contracts
+        run: forge build
+      # Run one after the other: both deploy to chain 31337 and write deployments/31337.json.
+      - name: Facilitator e2e
+        working-directory: services/facilitator
+        run: FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts
+      - name: SDK e2e
+        working-directory: packages/sdk
+        run: SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts

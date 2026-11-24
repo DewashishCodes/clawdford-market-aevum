@@ -58,6 +58,8 @@ facilitator:
 # End-to-end facilitator tests: spawn anvil on :8546, run Deploy.s.sol, pay through HTTP.
 e2e-anvil:
 	cd services/facilitator && FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts
+	cd packages/sdk && SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts
 
 e2e-fork:
 	cd services/facilitator && FACILITATOR_E2E=fork pnpm exec vitest run test/e2e.test.ts
+	cd packages/sdk && SDK_E2E=fork pnpm exec vitest run test/e2e.test.ts
