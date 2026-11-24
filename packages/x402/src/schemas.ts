@@ -142,14 +142,16 @@ export const ClaimRequest = z.object({ voucher: Voucher, signature });
 /** Facilitator `/close`: start the close with the agent's CloseChannel signature, or finalize after the window. */
 export const CloseRequest = z.object({ channelId: uint, signature: signature.optional() });
 
-/** Served at `/.well-known/agent-card.json`. Buyers check `payee` (Confirmation of Payee). */
+/**
+ * Seller agent card, served at the identity's on-chain `agentCardURI`. Buyers check that `payee` matches the quote
+ * and the stall's registered payee (Confirmation of Payee) and that the stall is listed.
+ */
 export const AgentCard = z.object({
   name: z.string(),
   description: z.string().optional(),
-  stallId: uint,
   chainId: z.number().int(),
   payee: address,
-  endpoints: z.array(z.string()).optional(),
+  stallIds: z.array(uint),
 });
 
 export const SupportedResponse = z.object({
