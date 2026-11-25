@@ -16,7 +16,8 @@ export type VaultCall =
   | { functionName: "createTask"; args: readonly unknown[] }
   | { functionName: "claim"; args: readonly unknown[] }
   | { functionName: "requestCloseWithSig"; args: readonly unknown[] }
-  | { functionName: "finalizeClose"; args: readonly unknown[] };
+  | { functionName: "finalizeClose"; args: readonly unknown[] }
+  | { functionName: "approveWithSig"; args: readonly unknown[] };
 
 export interface Planned {
   call: VaultCall;

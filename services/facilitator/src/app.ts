@@ -12,6 +12,7 @@ import {
 } from "viem";
 import { agentVaultAbi, type Deployment } from "@clawdford/aevum";
 import {
+  ApproveRequest,
   ClaimRequest,
   CloseRequest,
   FacilitatorRequest,
@@ -120,6 +121,15 @@ export function createApp(deps: FacilitatorDeps) {
     return { call: { functionName: "finalizeClose", args: [channelId] }, sessionId: ch.sessionId, channelId, action: "finalize", amount: refund };
   }
 
+  async function planApprove(body: unknown): Promise<Planned | string> {
+    const parsed = ApproveRequest.safeParse(body);
+    if (!parsed.success) return "invalid_payload";
+    const taskId = BigInt(parsed.data.taskId);
+    const task = await publicClient.readContract({ ...vault, functionName: "getTask", args: [taskId] });
+    const call = { functionName: "approveWithSig", args: [taskId, parsed.data.signature] } as const;
+    return { call, sessionId: task.sessionId, action: "approve", amount: task.amount.toString() };
+  }
+
   /** Checks, then sends a legacy tx and reads the ids out of the receipt. Every attempt is recorded. */
   async function execute(planned: Planned | string, ip: string, scheme: string): Promise<SettlementResponse> {
     const c = await check(planned, ip);
@@ -223,6 +233,15 @@ export function createApp(deps: FacilitatorDeps) {
   app.post("/close", async (req, res, next) => {
     try {
       res.json(await serial(async () => execute(await planClose(req.body), ipOf(req), "batch-settlement")));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Agents hold no gas, so an agent-approved task release is relayed like a payment.
+  app.post("/approve", async (req, res, next) => {
+    try {
+      res.json(await serial(async () => execute(await planApprove(req.body), ipOf(req), "escrow")));
     } catch (err) {
       next(err);
     }
