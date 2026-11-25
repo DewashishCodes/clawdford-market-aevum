@@ -5,3 +5,4 @@ aevum-mcp-*.json
 chain-*-mcp-*.json
 .aevum-skills/
 .aevum-state/
+dist/

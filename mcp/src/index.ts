@@ -3,6 +3,8 @@
 import { join, resolve } from "node:path";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { parseUnits, type Hex } from "viem";
+import aevum from "../../deployments/44005.json" with { type: "json" };
+import type { Deployment } from "@clawdford/aevum";
 import { createMcpServer } from "./tools.js";
 
 const env = (name: string, fallback?: string) => {
@@ -16,6 +18,8 @@ const sessionId = BigInt(env("SESSION_ID"));
 const server = createMcpServer({
   chainId,
   rpcUrl: process.env.RPC_URL || undefined,
+  // Built in so the published bundle (npx) works without the repo; other chains read deployments/<chainId>.json.
+  deployment: chainId === 44005 ? (aevum as Deployment) : undefined,
   sessionKey: env("SESSION_KEY") as Hex,
   sessionId,
   perCallBudget: parseUnits(env("BUDGET_PER_CALL", "0.2"), 6),
