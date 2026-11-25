@@ -4,7 +4,7 @@
 
 Built for the Aevum Builder Challenge #1 (QDay), track Native AI Assistants. Settles on the QDay Aevum testnet (chain ID 44005) in tUSD8. Named after Crawford Market in Mumbai: one roof, hundreds of stalls, open prices.
 
-> Status: contracts deployed to Aevum testnet; x402 package, facilitator and buyer/seller SDKs done (phases 0 to 6). Demo stalls, MCP server and web app come next. See [docs/PHASES.md](docs/PHASES.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
+> Status: every workflow ran on the Aevum testnet with real tUSD8 (Nov 25, [run with explorer links](docs/demo-runs/2026-11-25-aevum.md)). Contracts, x402 facilitator, SDKs, 8 demo stalls, MCP server and web app are done (phases 0 to 10 part 2); hosting and the submission are next. See [docs/PHASES.md](docs/PHASES.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## The problem
 
@@ -100,6 +100,8 @@ Run the demo stalls: set `SELLER_PRIVATE_KEY` (holding 2 tUSD8 for 8 stakes of 0
 Use the market from Claude Code or Codex: see [`mcp/README.md`](mcp/README.md). To try everything locally, `pnpm --filter @clawdford/mcp dev-stack` starts a fork of Aevum with the facilitator, the seeded stalls and a funded session, and writes `mcp/dev-mcp.json` for `claude --mcp-config`.
 
 Run the web app against Aevum: `pnpm --filter @clawdford/web dev` (port 3000; `CHAIN_ID`, `FACILITATOR_URL` and optional `RPC_URL` from the environment, see `.env.example`). Connect MetaMask with "Add Aevum to wallet". Pages: `/` (stats and latest receipts), `/market`, `/stall/[id]`, `/wallet` (owner console: gasless deposit, sessions with caps, live spend, Revoke, channels, ratings), `/sell` (identity, 402 check, stake and list), `/tasks` (task board and the human review queue), `/activity` (live feed). Locally, `pnpm --filter @clawdford/mcp dev-stack` prints the line that starts it against a fork with a dev wallet, no MetaMask needed.
+
+Demo stalls 1 to 8 are listed on Aevum (`deployments/stalls-44005.json`). Every PRD workflow ran on Aevum with real tUSD8: [docs/demo-runs/2026-11-25-aevum.md](docs/demo-runs/2026-11-25-aevum.md).
 
 Fork tests against real tUSD8: `cd contracts && AEVUM_FORK=true forge test --match-path "test/fork/*"`.
 

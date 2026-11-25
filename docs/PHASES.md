@@ -20,7 +20,7 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/): `fe
 | 7 | M2 | `phase/7-stalls` | Dec 1 to 2 | demo stalls 1 to 8 + seed script | workflows 2 to 6 pass end to end on fork | done (PR #10) |
 | 8 | M3 | `phase/8-mcp` | Dec 2 to 3 | MCP server with all tools + `mcp/README.md` | Claude Code completes the demo prompt on fork | done (PR #11) |
 | 9 | M3 | `phase/9-web` | Dec 3 to 5 | Next.js app: `/`, `/market`, `/stall/[id]`, `/wallet`, `/sell`, `/tasks`, `/activity` | workflows 1 to 8 pass on fork | done (PR #12) |
-| 10 | M4 | `phase/10-live` | Dec 5 to 8 | Docker compose, VPS for facilitator + sellers, Vercel for web, full run on Aevum, testnet fixes | every workflow recorded with explorer links | todo |
+| 10 | M4 | `phase/10-live` | Dec 5 to 8 | Docker compose, VPS for facilitator + sellers, Vercel for web, full run on Aevum, testnet fixes | every workflow recorded with explorer links | in progress: workflows 1 to 7 and stall listing recorded on Aevum (PR #13, #14); hosting and the `/sell` half of workflow 8 left |
 | 11 | M5 | `phase/11-submission` | Dec 8 to 10 | README, `docs/`, demo video, DoraHacks page, Demo Day rehearsal | checklist done, freeze Dec 10 12:00 IST | todo |
 | opt | after M4 | `phase/opt-agent-stalls` | if time allows | stall 9 (Research Agent), stall 10 (paid MCP server) | demo beat recorded | todo |
 

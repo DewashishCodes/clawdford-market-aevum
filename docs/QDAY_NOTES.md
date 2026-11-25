@@ -11,6 +11,7 @@ Facts checked against live sources. Answers to PRD section 15 go here.
 | Nov 24 | tUSD8 `DOMAIN_SEPARATOR` = `0x7838e6c4...8022`, equal to EIP712Domain("tUSD8", "2", 44005, token) | `cast call` + local hash |
 | Nov 24 | tUSD8 `PERMIT_TYPEHASH`, `TRANSFER_WITH_AUTHORIZATION_TYPEHASH`, `RECEIVE_WITH_AUTHORIZATION_TYPEHASH` match the standard EIP-2612 / EIP-3009 strings (same as `MockTUSD8`) | `cast call` + `cast keccak` |
 | Nov 24 | Permit deposit, gasless `receiveWithAuthorization` deposit and a full `payExact` all work against the real token on a fork | `test/fork/AevumFork.t.sol` |
+| Nov 25 | Every PRD workflow ran on Aevum with real tUSD8: gasless EIP-3009 deposit relayed, exact, stream (open, vouchers, claims, close, finalize with refund), license, task escrow with gasless approve, rating, revoke. Claims during the close window after a revoke are accepted. Rating costs about 0.0001 tQDAY at 1 gwei | `docs/demo-runs/2026-11-25-aevum.md` |
 | Nov 24 | Protocol deployed with legacy txs at block 4,018,135 from commit `09a27a4`: AgentVault `0x88f4...5BBE`, StallRegistry `0xfBF1...AD70`, IdentityRegistry `0x3580...8bf8`, ReputationRegistry `0xE93A...afC3`. Gas price 1 gwei, about 11.6M gas total. Treasury and arbiter are the deployer for now | `deployments/44005.json`, `cast code` |
 
 ## Open questions (PRD section 15)
@@ -18,7 +19,7 @@ Facts checked against live sources. Answers to PRD section 15 go here.
 1. Public QDay x402 facilitator for Aevum? Schemes and tokens? (pending)
 2. Official addresses for stablecoin paymaster, agent wallet / session key contracts, ERC-8004 registries? (pending)
 3. Is `bundler.qday.info` the supported ERC-4337 bundler? (pending, not needed for MVP)
-4. Exact DoraHacks submission form fields? (pending)
+4. Exact DoraHacks submission form fields? Answered Nov 25 from the "Create a new Build" page: logo, name, one-line description, tags, team info, a Markdown description (problem, how it works, key features, tech stack, hackathon requirements), project URL (optional), links (GitHub repo, video, website, X, LinkedIn, other) and contact info (organizers only). **Required: a GitHub, GitLab or Bitbucket link and a demo video** (YouTube, Vimeo, Loom or a direct .mp4). A live URL is optional.
 
 ## x402 spec (checked Nov 24, PRD 8.1 [VERIFY])
 
