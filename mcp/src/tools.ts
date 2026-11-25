@@ -23,6 +23,8 @@ export interface MarketConfig {
   facilitatorUrl: string;
   /** Where download_skill installs skills (`<dir>/<name>/SKILL.md`). */
   skillsDir: string;
+  /** Keeps open stream channels across restarts (see BuyerConfig.channelFile). */
+  channelFile?: string;
 }
 
 const CATEGORIES = ["inference", "data", "tool", "knowledge", "skill", "weights", "compute", "human", "eval", "outcome"] as const;
@@ -45,7 +47,7 @@ export function createMarketTools(cfg: MarketConfig) {
   const pub = createPublicClient({ chain, transport: http(rpc) });
   const d = cfg.deployment ?? loadDeployment(cfg.chainId);
   const agent = privateKeyToAccount(cfg.sessionKey);
-  const buyer = createBuyer({ chainId: cfg.chainId, rpcUrl: rpc, deployment: d, sessionKey: cfg.sessionKey, sessionId: cfg.sessionId, budget: { perCall: cfg.perCallBudget }, channelDeposit: cfg.channelDeposit });
+  const buyer = createBuyer({ chainId: cfg.chainId, rpcUrl: rpc, deployment: d, sessionKey: cfg.sessionKey, sessionId: cfg.sessionId, budget: { perCall: cfg.perCallBudget }, channelDeposit: cfg.channelDeposit, channelFile: cfg.channelFile });
   const vault = { address: d.AgentVault, abi: agentVaultAbi } as const;
 
   const session = () => pub.readContract({ ...vault, functionName: "getSession", args: [cfg.sessionId] });
@@ -240,8 +242,7 @@ export function createMarketTools(cfg: MarketConfig) {
   async function close_channels() {
     const closed = [];
     for (const [stallId, ch] of [...buyer.channels.entries()]) {
-      await buyer.closeChannel(stallId);
-      closed.push({ stallId: stallId.toString(), channelId: ch.channelId.toString(), paid: tusd(ch.owed), refundAfterWindow: tusd(ch.deposit - ch.owed) });
+      if (await buyer.closeChannel(stallId)) closed.push({ stallId: stallId.toString(), channelId: ch.channelId.toString(), paid: tusd(ch.owed), refundAfterWindow: tusd(ch.deposit - ch.owed) });
     }
     return { closed, note: "Unused deposits return to the owner's vault balance after the close window." };
   }

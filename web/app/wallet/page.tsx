@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { parseEventLogs, parseUnits, toHex, type Abi, type Address } from "viem";
+import { parseEther, parseEventLogs, parseUnits, toHex, type Abi, type Address } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { agentVaultAbi, mockTUSD8Abi, reputationRegistryAbi } from "@clawdford/aevum/abis";
 import { Badge, Bar, PageTitle, TxLink } from "@/components/ui";
@@ -151,7 +151,7 @@ function Funds({ owner, refresh }: { owner: Owner; refresh: () => void }) {
 
 function NewSession({ refresh }: { refresh: () => void }) {
   const w = useWallet();
-  const [f, setF] = useState({ perPayment: "0.2", daily: "1", total: "2", hours: "2", allow: "", agentCanApprove: false });
+  const [f, setF] = useState({ perPayment: "0.2", daily: "1", total: "2", hours: "2", allow: "", agentCanApprove: false, gas: "0.005" });
   const [cats, setCats] = useState<string[]>(CATEGORIES.filter((c) => c !== "tool"));
   const [created, setCreated] = useState<{ sessionId: string; key: string }>();
   const { busy, msg, run } = useAction();
@@ -172,6 +172,8 @@ function NewSession({ refresh }: { refresh: () => void }) {
       const [ev] = parseEventLogs({ abi: agentVaultAbi, logs: receipt.logs, eventName: "SessionCreated" });
       const sessionId = ev!.args.sessionId.toString();
       for (const id of allow) await w.write(w.config.contracts.AgentVault, agentVaultAbi as Abi, "setStallAllowed", [BigInt(sessionId), BigInt(id), true]);
+      const gas = parseEther(f.gas || "0");
+      if (gas > 0n) await w.sendGas(privateKeyToAccount(key).address, gas);
       setCreated({ sessionId, key });
       refresh();
     });
@@ -215,6 +217,10 @@ function NewSession({ refresh }: { refresh: () => void }) {
         <div>
           <label className="label" htmlFor="allow">Only these stalls (optional)</label>
           <input id="allow" className="input" value={f.allow} onChange={set("allow")} placeholder="e.g. 5, 6, 7" />
+        </div>
+        <div>
+          <label className="label" htmlFor="gas">Gas for the agent to rate (tQDAY, 0 for none)</label>
+          <input id="gas" className="input" value={f.gas} onChange={set("gas")} inputMode="decimal" />
         </div>
         <label className="flex items-center gap-2 self-end pb-2 text-sm">
           <input type="checkbox" checked={f.agentCanApprove} onChange={set("agentCanApprove")} />

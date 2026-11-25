@@ -121,6 +121,18 @@ function useWalletState(config: PublicConfig) {
     [clients, account, wrongChain, chain, config.chainName],
   );
 
+  /** Plain native-token transfer (legacy tx), e.g. gas for an agent key. */
+  const sendGas = useCallback(
+    async (to: Address, value: bigint) => {
+      if (!clients || !account) throw new Error("Connect a wallet first");
+      if (wrongChain) throw new Error(`Switch your wallet to ${config.chainName}`);
+      const hash = await clients.wallet.sendTransaction({ account, chain, to, value, type: "legacy" } as never);
+      const receipt = await clients.pub.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error(`gas transfer failed (${hash})`);
+    },
+    [clients, account, wrongChain, chain, config.chainName],
+  );
+
   const signTypedData = useCallback(
     async (data: Parameters<NonNullable<typeof clients>["wallet"]["signTypedData"]>[0]) => {
       if (!clients || !account) throw new Error("Connect a wallet first");
@@ -129,7 +141,7 @@ function useWalletState(config: PublicConfig) {
     [clients, account],
   );
 
-  return { config, account, connect, addChain, wrongChain, isDev: !!dev, hasWallet: !!dev || hasInjected, write, signTypedData };
+  return { config, account, connect, addChain, wrongChain, isDev: !!dev, hasWallet: !!dev || hasInjected, write, sendGas, signTypedData };
 }
 
 type WalletState = ReturnType<typeof useWalletState>;
