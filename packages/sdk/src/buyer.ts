@@ -161,7 +161,11 @@ export function createBuyer(cfg: BuyerConfig) {
     return s;
   }
 
-  const channelState = (ch: Channel) => publicClient.readContract({ address: d.AgentVault, abi: agentVaultAbi, functionName: "getChannel", args: [ch.channelId] });
+  /** On-chain state of a saved channel, or undefined when it is not this session's channel with that stall (e.g. a file left from a reset chain). */
+  async function channelState(stallId: bigint, ch: Channel) {
+    const s = await publicClient.readContract({ address: d.AgentVault, abi: agentVaultAbi, functionName: "getChannel", args: [ch.channelId] });
+    return s.sessionId === cfg.sessionId && s.stallId === stallId ? s : undefined;
+  }
 
   /** Opens a channel or tops it up so the next request fits; returns the voucher payload. */
   async function streamPayload(a: Extract<PaymentRequirements, { scheme: "batch-settlement" }>) {
@@ -173,8 +177,8 @@ export function createBuyer(cfg: BuyerConfig) {
     const validBefore = (nowSec() + 300n).toString();
 
     let ch = channels.get(stallId);
-    if (ch && (await channelState(ch)).closeAt !== 0n) {
-      // Closed meanwhile (the owner can close an orphaned channel from the web app): open a fresh one.
+    if (ch && (await channelState(stallId, ch))?.closeAt !== 0n) {
+      // Stale, or closed meanwhile (the owner can close an orphaned channel from the web app): open a fresh one.
       channels.delete(stallId);
       ch = undefined;
     }
@@ -253,8 +257,13 @@ export function createBuyer(cfg: BuyerConfig) {
    */
   async function closeChannel(stallId: bigint) {
     const ch = channels.get(stallId);
-    if (!ch) return;
-    const state = await channelState(ch);
+    if (!ch) return false;
+    const state = await channelState(stallId, ch);
+    if (!state) {
+      channels.delete(stallId);
+      save();
+      return false;
+    }
     if (state.closeAt === 0n) {
       const closed = await postJson<SettlementResponse>(`${ch.facilitator}/close`, { channelId: ch.channelId.toString(), signature: await sign("CloseChannel", { channelId: ch.channelId.toString() }) }, f);
       if (!closed.success) throw refusal(closed.errorReason ?? "close_failed");
@@ -266,6 +275,7 @@ export function createBuyer(cfg: BuyerConfig) {
     }
     channels.delete(stallId);
     save();
+    return true;
   }
 
   /** Releases a submitted task's escrow to the seller, gaslessly through the facilitator. Needs `agentCanApprove`. */

@@ -1,6 +1,6 @@
 // The MCP server end to end, through a real MCP client: the demo prompt's tool calls against the seeded demo market.
 // Opt in: MCP_E2E=anvil or MCP_E2E=fork.
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -144,6 +144,9 @@ describe.skipIf(!MODE)(`mcp e2e on ${MODE}`, () => {
 
   it("after a restart, close_channels still closes the stream channel and pays the last call", async () => {
     await client.close();
+    // A leftover entry from a reset chain: channel 1 belongs to another stall, so the agent must ignore it.
+    const file = join(skillsDir, "state", "channels.json");
+    writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), "999": { channelId: "1", deposit: "50000", owed: "1000", facilitator: market.facilitator } }));
     client = await connectAgent();
     const { body } = await call("close_channels");
     expect(body.closed).toHaveLength(1);

@@ -28,7 +28,7 @@ const config = {
     "clawdford-market": {
       command: process.execPath,
       args: ["--import", tsx, join(mcpDir, "src", "index.ts")],
-      env: { CHAIN_ID: String(t.chainId), RPC_URL: t.rpc, SESSION_KEY: agentKey, SESSION_ID: sessionId.toString(), FACILITATOR_URL: market.facilitator, BUDGET_PER_CALL: "0.2", SKILLS_DIR: join(mcpDir, ".dev-skills") },
+      env: { CHAIN_ID: String(t.chainId), RPC_URL: t.rpc, SESSION_KEY: agentKey, SESSION_ID: sessionId.toString(), FACILITATOR_URL: market.facilitator, BUDGET_PER_CALL: "0.2", SKILLS_DIR: join(mcpDir, ".dev-skills"), STATE_DIR: join(mcpDir, ".dev-state") },
     },
   },
 };
