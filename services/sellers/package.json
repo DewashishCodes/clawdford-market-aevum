@@ -1,0 +1,28 @@
+{
+  "name": "@clawdford/sellers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Demo stalls 1 to 8 on one Express server, plus the seed script that registers them on chain",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "seed": "tsx src/seed-cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clawdford/aevum": "workspace:*",
+    "@clawdford/sdk": "workspace:*",
+    "express": "^5.3.0",
+    "viem": "^2.58.6"
+  },
+  "devDependencies": {
+    "@clawdford/facilitator": "workspace:*",
+    "@clawdford/testkit": "workspace:*",
+    "@types/express": "^5.0.6",
+    "tsx": "^4.23.15"
+  }
+}
