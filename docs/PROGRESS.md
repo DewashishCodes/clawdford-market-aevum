@@ -4,12 +4,15 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-State on Nov 25 night: phases 0 to 9 merged; phase 10 parts 1 and 2 merged (agent ratings, channel resume, every workflow run on Aevum). Protocol and the 8 demo stalls live on Aevum. Record: `docs/demo-runs/2026-11-25-aevum.md`.
+State on Nov 26: phases 0 to 9 merged, phase 10 done except hosting (not planned, D23), onboarding quick wins merged (PRs up to #17). Protocol and the 8 demo stalls live on Aevum with names and agent cards served from `market/44005/` on GitHub. Run record: `docs/demo-runs/2026-11-25-aevum.md`.
 
-1. **Funds left** (Nov 25): deployer about 1.8 tUSD8 and 0.54 tQDAY; owner 0.2 tUSD8 in wallet plus 0.6915 in the vault, 0.039 tQDAY; seller's 2 tUSD8 is all staked; facilitator about 0.3 tQDAY.
-2. **Submission needs** (DoraHacks form, see `docs/QDAY_NOTES.md`): the GitHub link and a demo video; a live URL is optional. Phase 11: README, demo video script and recording (use `claude --mcp-config mcp/aevum-mcp-<id>.json` with a fresh `pnpm owner session --approve`), DoraHacks text.
-3. **No hosting planned** for facilitator and sellers (D23): they run on the demo machine for the video; stall metadata and agent cards are static files on GitHub. Open: whether the web app goes on Vercel (read-only) so judges get a URL. The `/sell` 402 check on Aevum (workflow 8, second half) needs a public https endpoint, so it stays fork-only unless hosted.
-4. Still open: PRD questions 1 to 3 in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
+1. **Waiting on the user: publish the MCP to npm.** npmjs.com account with 2FA, create the free org `clawdford` (if taken, rename the package, e.g. unscoped `clawdford-mcp`, which was free on Nov 26), `npm login`, then `pnpm --filter @clawdford/mcp publish --access public --no-git-checks` (builds the bundle first). Then test `npx -y @clawdford/mcp` and the plugin (`/plugin marketplace add DewashishCodes/clawdford-market-aevum`, `/plugin install clawdford@clawdford-market`) from a clean folder.
+2. **Decide:** web app on Vercel (read-only, serverless, so nothing idles) or no public URL.
+3. **Next work:** `/docs` section in the web app and a video slot on the home page; then UI items: read-only demo mode (view any address without a wallet), guided first run for owners, an agent-run timeline view, owner dashboard extras (agent names, spend over time, alerts near caps). Docs should list supported wallets (MetaMask, Rabby, OKX, Coinbase Wallet via "Add Aevum to wallet"); social login providers are a roadmap item.
+4. **Phase 11:** demo video script and recording, README polish, DoraHacks text (form fields in `docs/QDAY_NOTES.md`: GitHub link and video required).
+5. **Restart the Aevum stack** (all from the repo root, keys from `.env`): `pnpm --filter @clawdford/facilitator start`, `pnpm --filter @clawdford/sellers start`, `CHAIN_ID=44005 FACILITATOR_URL=http://127.0.0.1:4020 pnpm --filter @clawdford/web dev`. Sessions 1 (revoked) and 2 (0.1 cap) have expired; for a new agent run `pnpm owner session --approve` from `mcp/` and use the printed `aevum-mcp-<id>.json`.
+6. **Funds left** (Nov 26): deployer about 1.8 tUSD8 and 0.54 tQDAY; owner 0.2 tUSD8 in wallet plus about 0.69 in the vault, 0.039 tQDAY; seller's 2 tUSD8 is staked and it has earned about 0.3; facilitator about 0.3 tQDAY.
+7. Still open: PRD questions 1 to 3 in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
 
 ## Static stall metadata on Aevum (Nov 26)
 
