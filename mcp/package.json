@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "dev-stack": "tsx scripts/dev-stack.ts",
+    "owner": "tsx scripts/owner.ts",
     "call-tool": "tsx scripts/call-tool.ts"
   },
   "dependencies": {
