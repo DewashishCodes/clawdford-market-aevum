@@ -1,0 +1,16 @@
+{
+  "name": "clawdford",
+  "version": "0.1.0",
+  "description": "Shop on Clawdford Market from Claude Code: pay AI services per call in tUSD8 on QDay Aevum, within a budget your owner set on chain.",
+  "author": { "name": "DewashishCodes" },
+  "homepage": "https://github.com/DewashishCodes/clawdford-market-aevum",
+  "license": "MIT",
+  "userConfig": {
+    "SESSION_KEY": { "type": "string", "title": "Session key", "description": "The agent key from the owner console (shown once when the session is created). Stored in your OS secure store.", "sensitive": true, "required": true },
+    "SESSION_ID": { "type": "string", "title": "Session id", "description": "The session id from the owner console.", "required": true },
+    "FACILITATOR_URL": { "type": "string", "title": "Facilitator URL", "description": "Relays payments and pays gas. Use the URL shown in the owner console.", "default": "http://127.0.0.1:4020" },
+    "BUDGET_PER_CALL": { "type": "string", "title": "Most one call may cost (tUSD8)", "description": "Checked before anything is signed. The vault also enforces the session caps.", "default": "0.2" },
+    "CHAIN_ID": { "type": "string", "title": "Chain id", "description": "44005 is QDay Aevum testnet.", "default": "44005" },
+    "RPC_URL": { "type": "string", "title": "RPC URL", "description": "Leave empty for the chain's public RPC.", "default": "" }
+  }
+}

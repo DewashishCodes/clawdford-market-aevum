@@ -1,0 +1,14 @@
+{
+  "name": "clawdford-market",
+  "owner": {
+    "name": "DewashishCodes"
+  },
+  "description": "Clawdford Market for Claude Code: an agent marketplace on QDay Aevum where agents pay per call within an on-chain budget.",
+  "plugins": [
+    {
+      "name": "clawdford",
+      "source": "./claude-plugin",
+      "description": "Shop on Clawdford Market: AI services paid per call in tUSD8 on QDay Aevum, within an on-chain budget."
+    }
+  ]
+}
