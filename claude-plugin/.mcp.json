@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "market": {
+      "command": "npx",
+      "args": ["-y", "@clawdford/mcp@0.1"],
+      "env": {
+        "SESSION_KEY": "${user_config.SESSION_KEY}",
+        "SESSION_ID": "${user_config.SESSION_ID}",
+        "FACILITATOR_URL": "${user_config.FACILITATOR_URL}",
+        "BUDGET_PER_CALL": "${user_config.BUDGET_PER_CALL}",
+        "CHAIN_ID": "${user_config.CHAIN_ID}",
+        "RPC_URL": "${user_config.RPC_URL}"
+      }
+    }
+  }
+}

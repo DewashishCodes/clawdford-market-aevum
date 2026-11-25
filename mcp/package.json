@@ -1,9 +1,24 @@
 {
   "name": "@clawdford/mcp",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "description": "MCP server (stdio) that lets Claude Code or Codex shop on Clawdford Market with only a session key",
+  "description": "MCP server that lets Claude Code, Codex or any MCP client buy AI services on Clawdford Market (QDay Aevum) with only a session key",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DewashishCodes/clawdford-market-aevum.git",
+    "directory": "mcp"
+  },
+  "bin": {
+    "clawdford-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": "./src/tools.ts"
   },
@@ -13,18 +28,25 @@
     "test": "vitest run",
     "dev-stack": "tsx scripts/dev-stack.ts",
     "owner": "tsx scripts/owner.ts",
-    "call-tool": "tsx scripts/call-tool.ts"
+    "call-tool": "tsx scripts/call-tool.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/index.js --packages=external --alias:@clawdford/aevum=../packages/aevum/src/index.ts --alias:@clawdford/sdk/buyer=../packages/sdk/src/buyer.ts --alias:@clawdford/x402=../packages/x402/src/index.ts --banner:js=\"#!/usr/bin/env node\"",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@clawdford/aevum": "workspace:*",
-    "@clawdford/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "viem": "^2.58.6",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@clawdford/aevum": "workspace:*",
+    "@clawdford/sdk": "workspace:*",
     "@clawdford/sellers": "workspace:*",
     "@clawdford/testkit": "workspace:*",
+    "@clawdford/x402": "workspace:*",
+    "esbuild": "0.28.2",
     "tsx": "^4.23.15"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

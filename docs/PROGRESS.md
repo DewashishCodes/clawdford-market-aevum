@@ -11,6 +11,12 @@ State on Nov 25 night: phases 0 to 9 merged; phase 10 parts 1 and 2 merged (agen
 3. **Optional hosting** (rest of phase 10): VPS with https for facilitator + sellers, web on Vercel. Then point the stalls at the public URL with `StallRegistry.updateStall` and `IdentityRegistry.update` (no re-seed needed) and do the `/sell` 402 check on Aevum (workflow 8, second half).
 4. Still open: PRD questions 1 to 3 in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
 
+## Onboarding quick wins (Nov 25)
+
+- `npx -y @clawdford/mcp`: the MCP server is a single bundled file with the Aevum deployment built in (D22). Tested by installing the packed tarball into an empty folder and calling `market_search` on Aevum with only `SESSION_KEY`, `SESSION_ID` and `FACILITATOR_URL` set. CI builds the bundle and starts it. Not yet published to npm (needs the owner's npm login and the `@clawdford` scope).
+- Claude Code plugin `clawdford` in `claude-plugin/` with a marketplace at the repo root: the MCP server, a "how to shop" skill and `/clawdford:budget`; the session key is a sensitive plugin option. `claude plugin validate` passes for both.
+- Seller dashboard ("My stalls" on `/sell`, `/api/seller/[address]`): earnings per stall net of the fee (summed per payment, as the vault rounds), payments, open channels, tasks in flight, ratings, stake and unstake status, latest payments. Web e2e covers it.
+
 ## Phase 10, part 2: every workflow on Aevum (Nov 25)
 
 - Seeded the 8 demo stalls on Aevum (`deployments/stalls-44005.json`), ran facilitator and sellers locally against the public RPC, and ran workflows 1 to 7 plus the listing half of 8 with real tUSD8. Explorer links in `docs/demo-runs/2026-11-25-aevum.md`. Session 1 cost the owner 0.3085 tUSD8 net; refunds after revoke came back through the seller's settler.

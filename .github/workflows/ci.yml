@@ -50,6 +50,11 @@ jobs:
         run: node --test tools/check-shanghai.test.mjs
       - run: pnpm typecheck
       - run: pnpm test
+      - name: MCP bundle (npx package) starts
+        run: |
+          pnpm --filter @clawdford/mcp build
+          # Without a session it must fail on the missing SESSION_ID, which proves the bundle loads all its imports.
+          node mcp/dist/index.js 2>&1 | grep -q "SESSION_ID is not set"
       - name: Web build
         run: pnpm --filter @clawdford/web build
         env:

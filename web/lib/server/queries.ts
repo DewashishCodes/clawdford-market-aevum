@@ -333,6 +333,53 @@ export async function ownerView(c: Ctx, owner: Address) {
   };
 }
 
+/** Seller dashboard: the stalls this address owns, what they earned, open channels, tasks in flight and ratings. */
+export async function sellerView(c: Ctx, owner: Address) {
+  const vault = { address: c.cfg.deployment.AgentVault, abi: agentVaultAbi } as const;
+  const [all, events] = await Promise.all([listStalls(c), c.indexer.sync()]);
+  const stalls = all.filter((s) => getAddress(s.owner) === getAddress(owner));
+  const ids = new Set(stalls.map((s) => s.id));
+  const receipts = receiptsOf(events).filter((r) => ids.has(r.stallId));
+  // The vault takes the fee per payment (rounded down), so net is summed per receipt to match the payee's balance exactly.
+  const fee = BigInt(c.cfg.deployment.feeBps);
+  const sums = (rs: ReceiptView[]) => rs.reduce((t, r) => ({ gross: t.gross + BigInt(r.amount), net: t.net + BigInt(r.amount) - (BigInt(r.amount) * fee) / 10_000n }), { gross: 0n, net: 0n });
+
+  const channels = (
+    await Promise.all(
+      events
+        .filter((e) => e.name === "ChannelOpened" && ids.has(arg(e, "stallId").toString()))
+        .map(async (e) => {
+          const ch = await c.pub.readContract({ ...vault, functionName: "getChannel", args: [arg(e, "channelId")] });
+          return { channelId: arg(e, "channelId").toString(), stallId: ch.stallId.toString(), sessionId: ch.sessionId.toString(), deposit: ch.deposit.toString(), claimed: ch.claimed.toString(), closeAt: Number(ch.closeAt), finalized: ch.finalized };
+        }),
+    )
+  ).filter((ch) => !ch.finalized);
+  const tasks = (await taskBoard(c)).filter((t) => ids.has(t.stallId) && ["open", "submitted", "disputed"].includes(t.status));
+  const ratings = events
+    .filter((e) => e.name === "Rated" && ids.has(arg(e, "stallId").toString()))
+    .map((e) => ({ stallId: arg(e, "stallId").toString(), receiptId: arg(e, "receiptId").toString(), score: Number(arg<number>(e, "score")), commentURI: arg<string>(e, "commentURI"), txHash: e.txHash }))
+    .reverse();
+
+  const perStall = await Promise.all(
+    stalls.map(async (s) => {
+      const mine = receipts.filter((r) => r.stallId === s.id);
+      const t = sums(mine);
+      const [amount, unlockAt] = (await c.pub.readContract({ address: c.cfg.deployment.StallRegistry, abi: stallRegistryAbi, functionName: "pendingUnstake", args: [BigInt(s.id)] })) as unknown as [bigint, bigint];
+      return { ...s, payments: mine.length, gross: t.gross.toString(), net: t.net.toString(), pendingUnstake: { amount: amount.toString(), unlockAt: Number(unlockAt) } };
+    }),
+  );
+  const total = sums(receipts);
+  return {
+    feeBps: c.cfg.deployment.feeBps,
+    totals: { gross: total.gross.toString(), net: total.net.toString(), payments: receipts.length, lockedInChannels: channels.reduce((sum, ch) => sum + BigInt(ch.deposit) - BigInt(ch.claimed), 0n).toString() },
+    stalls: perStall,
+    channels,
+    tasks,
+    ratings,
+    receipts: (await withTimes(c, receipts.slice(-20))).reverse(),
+  };
+}
+
 export async function taskBoard(c: Ctx) {
   const events = await c.indexer.sync();
   const vault = { address: c.cfg.deployment.AgentVault, abi: agentVaultAbi } as const;
