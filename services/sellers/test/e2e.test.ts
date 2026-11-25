@@ -1,44 +1,23 @@
 // PRD workflows 2 to 6 against the real demo stalls: seed -> sellers server -> facilitator -> vault.
 // Opt in: SELLERS_E2E=anvil or SELLERS_E2E=fork. The LLM is faked so runs are deterministic.
-import { createServer, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { keccak256, toHex, type Hex } from "viem";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { agentVaultAbi, mockTUSD8Abi } from "@clawdford/aevum";
+import { agentVaultAbi } from "@clawdford/aevum";
 import { CHALLENGE_WINDOW, startChain, type TestChain } from "@clawdford/testkit";
-import { createApp as createFacilitator, Rails } from "@clawdford/facilitator";
 import { createBuyer, PaymentRefused, type Buyer } from "@clawdford/sdk/buyer";
-import { createSellersApp } from "../src/app.js";
-import { CATEGORY, type StallIds } from "../src/catalog.js";
-import type { Llm } from "../src/llm.js";
-import { seedStalls, stallIdsOf } from "../src/seed.js";
+import type { StallIds } from "../src/catalog.js";
+import { REVIEW_TOKEN, startDemoMarket, type DemoMarket } from "./market.js";
 
 const MODE = process.env.SELLERS_E2E;
-const SELLER_KEY: Hex = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"; // anvil key 1
-const REVIEW_TOKEN = "test-review-token";
 const json = { "content-type": "application/json" };
 
-// Uses the whole completion budget, so cost is predictable: maxTokens 512 -> 1 unit, 1500 -> 2 units.
-const fakeLlm: Llm = async (messages, maxTokens) => {
-  const judging = messages[0]?.content.includes("grade");
-  return { text: judging ? '{"score": 7, "verdict": "pass", "feedback": "clear"}' : "Uncapped indemnity: high risk.", tokens: maxTokens + 50 };
-};
-
 let t: TestChain;
+let market: DemoMarket;
 let base: string;
 let stalls: StallIds;
 let buyer: Buyer;
-let sessionId: bigint;
-let sellers: ReturnType<typeof createSellersApp>["sellers"];
-const servers: Server[] = [];
-
-async function listen(server: Server) {
-  servers.push(server);
-  server.listen(0);
-  await new Promise((r) => server.once("listening", r));
-  return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-}
+let cappedBuyer: Buyer;
+let sellers: DemoMarket["sellers"];
 
 async function refusedWith(p: Promise<unknown>) {
   try {
@@ -56,55 +35,18 @@ const tokenBalance = (who: `0x${string}`) => t.balanceOf(who);
 describe.skipIf(!MODE)(`demo stalls e2e on ${MODE}`, () => {
   beforeAll(async () => {
     t = await startChain({ fork: MODE === "fork", port: 8549 });
-    const chainCfg = { chainId: t.chainId, rpcUrl: t.rpc, deployment: t.d };
-    const { seller, owner } = t.accounts;
-
-    // Seller: stake for 8 stalls. Owner: workflow 1 session caps (0.2 / day 1.0 / total 2.0, 2h, all but tool) but a 1.4 tUSD8
-    // deposit, not 3: on the fork the tUSD8 comes from the Aevum deployer, which holds 5 in total.
-    await t.fund(seller.address, 2_000_000n);
-    await t.fund(owner.address, 1_400_000n);
-    await t.send(owner, t.d.tUSD8, mockTUSD8Abi, "approve", [t.d.AgentVault, 1_400_000n]);
-    await t.send(owner, t.d.AgentVault, agentVaultAbi, "deposit", [1_400_000n]);
-    const agentKey = generatePrivateKey();
-    const allButTool = (0xffffffff & ~(1 << CATEGORY.tool)) >>> 0;
-    const session = (key: Hex, perPaymentCap: bigint) =>
-      t.now().then((now) =>
-        t.send(owner, t.d.AgentVault, agentVaultAbi, "createSession", [
-          { agentKey: privateKeyToAccount(key).address, perPaymentCap, dailyCap: 1_000_000n, totalCap: 2_000_000n, expiry: now + 7_200n, categoryMask: allButTool, agentCanApprove: false },
-        ]),
-      ) as Promise<bigint>;
-    sessionId = await session(agentKey, 200_000n);
-
-    const facilitator = await listen(
-      createServer(
-        createFacilitator({
-          publicClient: t.pub as never,
-          walletClient: t.wallet(t.accounts.facilitator) as never,
-          deployment: t.d,
-          rails: new Rails(":memory:", { perIpPerDay: 1000, perSessionPerDay: 1000, perDay: 1000 }),
-          lowBalanceWei: 0n,
-          minClaim: 1_000n,
-        }),
-      ),
-    );
-
-    // Listen first so the seed can register the real agent card URLs.
-    const server = createServer();
-    base = await listen(server);
-    stalls = stallIdsOf(await seedStalls({ ...chainCfg, sellerKey: SELLER_KEY, baseUrl: base }));
-    const built = createSellersApp({ ...chainCfg, stalls, sellerKey: SELLER_KEY, facilitatorUrl: facilitator, baseUrl: base, shadyPayee: "0x000000000000000000000000000000000000dEaD", llm: fakeLlm, reviewToken: REVIEW_TOKEN, dbPath: () => ":memory:", claimThreshold: 1_000n });
-    sellers = built.sellers;
-    server.on("request", built.app);
-
-    buyer = createBuyer({ ...chainCfg, sessionKey: agentKey, sessionId, budget: { perCall: 200_000n }, channelDeposit: 50_000n });
+    // Workflow 1 session caps, but a 1.4 tUSD8 deposit, not 3: on the fork the tUSD8 comes from the Aevum deployer, which holds 5.
+    market = await startDemoMarket(t, { ownerDeposit: 1_400_000n });
+    ({ base, stalls, sellers } = market);
+    const { agentKey, sessionId } = await market.openSession();
+    buyer = createBuyer({ ...market.chainCfg, sessionKey: agentKey, sessionId, budget: { perCall: 200_000n }, channelDeposit: 50_000n });
     // A second agent with a per-payment cap below the license price, for the on-chain cap refusal.
-    const cappedKey = generatePrivateKey();
-    cappedBuyer = createBuyer({ ...chainCfg, sessionKey: cappedKey, sessionId: await session(cappedKey, 100_000n), budget: { perCall: 1_000_000n } });
+    const capped = await market.openSession({ perPaymentCap: 100_000n });
+    cappedBuyer = createBuyer({ ...market.chainCfg, sessionKey: capped.agentKey, sessionId: capped.sessionId, budget: { perCall: 1_000_000n } });
   }, 240_000);
-  let cappedBuyer: Buyer;
 
   afterAll(() => {
-    servers.forEach((s) => s.close());
+    market?.close();
     t?.stop();
   });
 

@@ -1,0 +1,28 @@
+{
+  "name": "@clawdford/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server (stdio) that lets Claude Code or Codex shop on Clawdford Market with only a session key",
+  "exports": {
+    ".": "./src/tools.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "dev-stack": "tsx scripts/dev-stack.ts"
+  },
+  "dependencies": {
+    "@clawdford/aevum": "workspace:*",
+    "@clawdford/sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "viem": "^2.58.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@clawdford/sellers": "workspace:*",
+    "@clawdford/testkit": "workspace:*",
+    "tsx": "^4.23.15"
+  }
+}

@@ -234,7 +234,15 @@ export function createBuyer(cfg: BuyerConfig) {
     channels.delete(stallId);
   }
 
-  return { payingFetch, closeChannel, address: agent.address as Address, channels };
+  /** Releases a submitted task's escrow to the seller, gaslessly through the facilitator. Needs `agentCanApprove`. */
+  async function approveTask(taskId: bigint, facilitatorUrl: string) {
+    await checkSession();
+    const r = await postJson<SettlementResponse>(`${facilitatorUrl}/approve`, { taskId: taskId.toString(), signature: await sign("ApproveTask", { taskId: taskId.toString() }) }, f);
+    if (!r.success) throw refusal(r.errorReason ?? "approve_failed");
+    return r;
+  }
+
+  return { payingFetch, closeChannel, approveTask, address: agent.address as Address, channels };
 }
 
 export type Buyer = ReturnType<typeof createBuyer>;

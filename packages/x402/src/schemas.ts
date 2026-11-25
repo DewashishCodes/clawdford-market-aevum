@@ -141,6 +141,8 @@ export const SettlementResponse = z.object({
 export const ClaimRequest = z.object({ voucher: Voucher, signature });
 /** Facilitator `/close`: start the close with the agent's CloseChannel signature, or finalize after the window. */
 export const CloseRequest = z.object({ channelId: uint, signature: signature.optional() });
+/** Facilitator `/approve`: release a submitted task with the agent's ApproveTask signature (needs `agentCanApprove`). */
+export const ApproveRequest = z.object({ taskId: uint, signature });
 
 /**
  * Seller agent card, served at the identity's on-chain `agentCardURI`. Buyers check that `payee` matches the quote
@@ -178,4 +180,5 @@ export type StreamRequirements = z.infer<typeof StreamRequirements>;
 export type EscrowRequirements = z.infer<typeof EscrowRequirements>;
 export type ClaimRequest = z.infer<typeof ClaimRequest>;
 export type CloseRequest = z.infer<typeof CloseRequest>;
+export type ApproveRequest = z.infer<typeof ApproveRequest>;
 export type AgentCard = z.infer<typeof AgentCard>;
