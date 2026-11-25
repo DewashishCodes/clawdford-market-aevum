@@ -1,3 +1,7 @@
 dev-mcp.json
 .dev-skills/
 .dev-state/
+aevum-mcp-*.json
+chain-*-mcp-*.json
+.aevum-skills/
+.aevum-state/

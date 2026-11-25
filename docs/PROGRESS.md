@@ -4,11 +4,18 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-State on Nov 25 night: phases 0 to 9 merged plus the first part of phase 10 (agent ratings, channel resume, seller key). CI green. Protocol live on Aevum, addresses in the README.
+State on Nov 25 night: phases 0 to 9 merged; phase 10 parts 1 and 2 merged (agent ratings, channel resume, every workflow run on Aevum). Protocol and the 8 demo stalls live on Aevum. Record: `docs/demo-runs/2026-11-25-aevum.md`.
 
-1. **Done for phase 10 so far**: `SELLER_PRIVATE_KEY` in `.env`, funded with 2 tUSD8 and 0.1 tQDAY from the deployer (address `0x2cC4469A30946357999623ba500699BaaeB0c87b`; deployer left with about 3 tUSD8 and 0.59 tQDAY). Groq key in `.env`, model `qwen/qwen3.8-27b` (the key has no llama models), verified with paid LexModel and judge calls on the fork.
-2. **Still needed** (`phase/10-live`, waiting on the user's hosting choice): a VPS with https for facilitator + sellers (Docker compose, `app.set("trust proxy", ...)` in the facilitator), web on Vercel (`DEPLOYMENTS_DIR` or bundle `deployments/44005.json`; indexer is in memory per process). Then set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`, seed the stalls on Aevum (the URL goes into the on-chain agent cards), and run every workflow on Aevum recording explorer links.
-3. Still open: PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
+1. **Funds left** (Nov 25): deployer about 1.8 tUSD8 and 0.54 tQDAY; owner 0.2 tUSD8 in wallet plus 0.6915 in the vault, 0.039 tQDAY; seller's 2 tUSD8 is all staked; facilitator about 0.3 tQDAY.
+2. **Submission needs** (DoraHacks form, see `docs/QDAY_NOTES.md`): the GitHub link and a demo video; a live URL is optional. Phase 11: README, demo video script and recording (use `claude --mcp-config mcp/aevum-mcp-<id>.json` with a fresh `pnpm owner session --approve`), DoraHacks text.
+3. **Optional hosting** (rest of phase 10): VPS with https for facilitator + sellers, web on Vercel. Then point the stalls at the public URL with `StallRegistry.updateStall` and `IdentityRegistry.update` (no re-seed needed) and do the `/sell` 402 check on Aevum (workflow 8, second half).
+4. Still open: PRD questions 1 to 3 in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
+
+## Phase 10, part 2: every workflow on Aevum (Nov 25)
+
+- Seeded the 8 demo stalls on Aevum (`deployments/stalls-44005.json`), ran facilitator and sellers locally against the public RPC, and ran workflows 1 to 7 plus the listing half of 8 with real tUSD8. Explorer links in `docs/demo-runs/2026-11-25-aevum.md`. Session 1 cost the owner 0.3085 tUSD8 net; refunds after revoke came back through the seller's settler.
+- `mcp/scripts/owner.ts` (`pnpm owner deposit | session | revoke | status`): the owner console's calls from the command line, for runs without a browser wallet. `call-tool` takes `MCP_CONFIG`.
+- New owner key funded from the deployer (1.2 tUSD8, 0.05 tQDAY). `REVIEW_TOKEN` set in `.env`.
 
 ## Phase 10, part 1: agent ratings, channel resume, seller key (Nov 25)
 

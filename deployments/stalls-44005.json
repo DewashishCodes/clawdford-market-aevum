@@ -1,0 +1,18 @@
+{
+  "chainId": 44005,
+  "baseUrl": "http://127.0.0.1:4030",
+  "identities": {
+    "demo": "1",
+    "shady": "2"
+  },
+  "stalls": {
+    "lexmodel": "1",
+    "clauses": "2",
+    "cases": "3",
+    "risk-memo-skill": "4",
+    "judge": "5",
+    "embeddings": "6",
+    "review": "7",
+    "shady": "8"
+  }
+}

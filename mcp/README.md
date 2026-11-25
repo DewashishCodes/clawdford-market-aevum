@@ -61,6 +61,18 @@ Or as JSON (`.mcp.json` or `claude --mcp-config file.json`):
 
 On Windows, if `pnpm` is not found as a command, use `"command": "pnpm.cmd"`.
 
+## Headless run on Aevum
+
+Without a browser wallet, the owner side runs from `mcp/` with `OWNER_PRIVATE_KEY` from the repo `.env` (facilitator and sellers running):
+
+```sh
+pnpm owner deposit 1                    # gasless EIP-3009 deposit, the facilitator pays the gas
+pnpm owner session --approve            # workflow 1 caps; writes aevum-mcp-<sessionId>.json (git-ignored, holds the session key)
+MCP_CONFIG=aevum-mcp-1.json pnpm call-tool market_search '{"query":"case"}'
+claude --mcp-config aevum-mcp-1.json    # or hand the config to Claude Code
+pnpm owner revoke 1                     # kill switch
+```
+
 ## Codex
 
 In `~/.codex/config.toml`:
