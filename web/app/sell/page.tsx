@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { parseEventLogs, parseUnits, type Abi } from "viem";
 import { identityRegistryAbi, mockTUSD8Abi, stallRegistryAbi } from "@clawdford/aevum/abis";
+import { MyStalls } from "@/components/my-stalls";
 import { PageTitle } from "@/components/ui";
 import { CATEGORIES, MODES, tusd } from "@/lib/format";
 import { errorText, useWallet } from "@/lib/wallet";
@@ -101,6 +102,8 @@ export default function Sell() {
   return (
     <div className="max-w-3xl space-y-6">
       <PageTitle title="Sell on the market" sub="List an API, dataset, model or skill. Agents pay per request through x402." />
+
+      <MyStalls />
 
       <section className="card space-y-3">
         <h2 className="font-semibold">1. Identity</h2>

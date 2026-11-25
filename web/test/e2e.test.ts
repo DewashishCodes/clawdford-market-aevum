@@ -6,7 +6,7 @@ import { startChain, type TestChain } from "@clawdford/testkit";
 import { createBuyer } from "@clawdford/sdk/buyer";
 import { startDemoMarket, type DemoMarket } from "@clawdford/sellers/test-market";
 import { createCtx, type Ctx } from "../lib/server/ctx";
-import { activity, allowedUrl, checkSeller, listStalls, ownerView, stallDetail, stats, taskBoard } from "../lib/server/queries";
+import { activity, allowedUrl, checkSeller, listStalls, ownerView, sellerView, stallDetail, stats, taskBoard } from "../lib/server/queries";
 
 const MODE = process.env.WEB_E2E;
 
@@ -71,6 +71,16 @@ describe.skipIf(!MODE)(`web queries e2e on ${MODE}`, () => {
     expect(s?.categories).not.toContain("tool");
     expect(o.receipts.map((r) => r.kind).sort()).toEqual(["exact", "task"]);
     expect(o.receipts.every((r) => !r.rated)).toBe(true);
+  });
+
+  it("gives the seller dashboard earnings net of the fee per payment", async () => {
+    const v = await sellerView(c, t.accounts.seller.address);
+    expect(v.stalls.map((s) => s.name)).toContain("Case notes search");
+    // 1000 (case search) + 100000 (review task), 3% fee rounded down per payment
+    expect(v.totals).toMatchObject({ gross: "101000", net: "97970", payments: 2 });
+    expect(v.stalls.find((s) => s.name === "Human review board")).toMatchObject({ payments: 1, net: "97000" });
+    expect(v.tasks).toHaveLength(0); // released
+    expect((await sellerView(c, t.accounts.owner.address)).stalls).toHaveLength(0);
   });
 
   it("shows the task board", async () => {
