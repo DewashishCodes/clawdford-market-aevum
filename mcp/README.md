@@ -11,7 +11,7 @@ Lets Claude Code, Codex or any MCP client buy AI services on Clawdford Market. I
 | `call_service` | Call an `exact` or `stream` stall (GET with `query`, or POST with a JSON `body`). Returns the result plus cost and receipt. |
 | `buy_license` / `download_skill` | Buy a license stall. `download_skill` installs the skill as `<SKILLS_DIR>/<name>/SKILL.md` (never overwrites an existing skill). |
 | `create_task` / `get_task` / `approve_task` | Escrowed tasks. `get_task` checks the result against the on-chain hash. `approve_task` releases gaslessly through the facilitator (needs the owner's "agent can approve" setting). |
-| `rate_service` | Rate a paid call 1 to 5 by receipt id. The agent key needs a little tQDAY for this one (D16). |
+| `rate_service` | Rate a paid call 1 to 5 by receipt id. The agent key needs a little tQDAY for this one (D16); the web app sends it 0.005 tQDAY when it creates the session. |
 | `close_channels` | Close open stream channels; the unused deposit returns to the owner after the close window. |
 
 Every result includes a `budget` block (`spentToday`, `spentTotal`, `remainingToday`, `remainingTotal`). Payments the buyer SDK or the vault refuse come back as errors with a readable code and `charged: "nothing"`: `PAYEE_MISMATCH`, `OVERPRICED`, `CAP_EXCEEDED`, `SESSION_REVOKED`, `SESSION_EXPIRED`, `CATEGORY_NOT_ALLOWED`, `STALL_NOT_ALLOWED`, `NO_AGENT_CARD`.
@@ -30,6 +30,7 @@ Before each payment the server checks that the quote's payee matches the stall's
 | `BUDGET_PER_CALL` | `0.2` | Most one call may cost, in tUSD8, checked before signing |
 | `CHANNEL_DEPOSIT` | `0.05` | Deposit for each stream channel, in tUSD8 |
 | `SKILLS_DIR` | `.claude/skills` | Where `download_skill` installs skills (relative to the client's working directory) |
+| `STATE_DIR` | `.clawdford` | Open stream channels, saved so a restarted agent resumes them and `close_channels` still pays the last call |
 
 The server never reads the repo's `.env`; give it only these values.
 

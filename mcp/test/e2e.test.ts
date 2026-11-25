@@ -21,6 +21,7 @@ let client: Client;
 let sessionId: bigint;
 let agentAddress: `0x${string}`;
 let skillsDir: string;
+let connectAgent: () => Promise<Client>;
 
 type Body = Record<string, any>;
 async function call(name: string, args: Record<string, unknown> = {}) {
@@ -37,11 +38,17 @@ describe.skipIf(!MODE)(`mcp e2e on ${MODE}`, () => {
     agentAddress = privateKeyToAccount(s.agentKey).address;
     skillsDir = mkdtempSync(join(tmpdir(), "clawdford-skills-"));
 
-    const server = createMcpServer({ ...market.chainCfg, sessionKey: s.agentKey, sessionId, perCallBudget: 200_000n, channelDeposit: 50_000n, facilitatorUrl: market.facilitator, skillsDir });
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-    await server.connect(serverSide);
-    client = new Client({ name: "e2e", version: "0.0.0" });
-    await client.connect(clientSide);
+    const channelFile = join(skillsDir, "state", "channels.json");
+    // A fresh MCP server process for the same agent; calling it again simulates a restart.
+    connectAgent = async () => {
+      const server = createMcpServer({ ...market.chainCfg, sessionKey: s.agentKey, sessionId, perCallBudget: 200_000n, channelDeposit: 50_000n, facilitatorUrl: market.facilitator, skillsDir, channelFile });
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const c = new Client({ name: "e2e", version: "0.0.0" });
+      await c.connect(clientSide);
+      return c;
+    };
+    client = await connectAgent();
   }, 240_000);
 
   afterAll(async () => {
@@ -135,7 +142,9 @@ describe.skipIf(!MODE)(`mcp e2e on ${MODE}`, () => {
     expect((await call("market_search", { query: "case notes" })).body.stalls[0].rating).toBe("5.00 / 5 from 1");
   });
 
-  it("close_channels closes the open stream channel", async () => {
+  it("after a restart, close_channels still closes the stream channel and pays the last call", async () => {
+    await client.close();
+    client = await connectAgent();
     const { body } = await call("close_channels");
     expect(body.closed).toHaveLength(1);
     expect(body.closed[0]).toMatchObject({ paid: "0.002 tUSD8", refundAfterWindow: "0.048 tUSD8" });

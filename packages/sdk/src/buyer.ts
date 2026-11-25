@@ -1,4 +1,6 @@
 import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { getAddress, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { agentVaultAbi, identityRegistryAbi, stallRegistryAbi } from "@clawdford/aevum";
@@ -30,6 +32,8 @@ export interface BuyerConfig extends ChainConfig {
   budget: { perCall: bigint };
   /** Deposit for new channels and top ups. Default 0.05 tUSD8 (raised to the stall's minimum). */
   channelDeposit?: bigint;
+  /** JSON file that keeps open channels across restarts, so a restarted agent can keep streaming or close and pay its last call. */
+  channelFile?: string;
   fetch?: typeof fetch;
 }
 
@@ -89,13 +93,29 @@ const nowSec = () => BigInt(Math.floor(Date.now() / 1000));
 const randomNonce = () => BigInt(toHexString(randomBytes(16)));
 const toHexString = (b: Buffer) => `0x${b.toString("hex")}`;
 
+function loadChannels(file?: string) {
+  const m = new Map<bigint, Channel>();
+  if (!file || !existsSync(file)) return m;
+  const raw = JSON.parse(readFileSync(file, "utf8")) as Record<string, { channelId: string; deposit: string; owed: string; facilitator: string }>;
+  for (const [stallId, c] of Object.entries(raw)) m.set(BigInt(stallId), { channelId: BigInt(c.channelId), deposit: BigInt(c.deposit), owed: BigInt(c.owed), facilitator: c.facilitator });
+  return m;
+}
+
+function saveChannels(file: string | undefined, channels: Map<bigint, Channel>) {
+  if (!file) return;
+  mkdirSync(dirname(file), { recursive: true });
+  const out = Object.fromEntries([...channels].map(([k, c]) => [k.toString(), { channelId: c.channelId.toString(), deposit: c.deposit.toString(), owed: c.owed.toString(), facilitator: c.facilitator }]));
+  writeFileSync(file, JSON.stringify(out, null, 2));
+}
+
 export function createBuyer(cfg: BuyerConfig) {
   const { publicClient, deployment: d } = connect(cfg);
   const agent = privateKeyToAccount(cfg.sessionKey);
   const domain = vaultDomain(d.chainId, d.AgentVault);
   const network = networkOf(d.chainId);
   const f = cfg.fetch ?? fetch;
-  const channels = new Map<bigint, Channel>(); // by stall id
+  const channels = loadChannels(cfg.channelFile); // by stall id
+  const save = () => saveChannels(cfg.channelFile, channels);
   const sign = (type: VaultPrimaryType, msg: Record<string, string>) => agent.signTypedData(vaultTypedData(domain, type, msg));
 
   let sessionCache: { at: number; revoked: boolean; expiry: bigint } | undefined;
@@ -141,6 +161,8 @@ export function createBuyer(cfg: BuyerConfig) {
     return s;
   }
 
+  const channelState = (ch: Channel) => publicClient.readContract({ address: d.AgentVault, abi: agentVaultAbi, functionName: "getChannel", args: [ch.channelId] });
+
   /** Opens a channel or tops it up so the next request fits; returns the voucher payload. */
   async function streamPayload(a: Extract<PaymentRequirements, { scheme: "batch-settlement" }>) {
     const stallId = BigInt(a.extra.stallId);
@@ -151,15 +173,22 @@ export function createBuyer(cfg: BuyerConfig) {
     const validBefore = (nowSec() + 300n).toString();
 
     let ch = channels.get(stallId);
+    if (ch && (await channelState(ch)).closeAt !== 0n) {
+      // Closed meanwhile (the owner can close an orphaned channel from the web app): open a fresh one.
+      channels.delete(stallId);
+      ch = undefined;
+    }
     if (!ch) {
       const open = { sessionId: cfg.sessionId.toString(), stallId: stallId.toString(), deposit: deposit.toString(), validBefore, nonce: randomNonce().toString() };
       const s = await relay(a.extra.facilitator, a, { action: "open", open, signature: await sign("OpenChannel", open) });
       ch = { channelId: BigInt(s.channelId!), deposit, owed: 0n, facilitator: a.extra.facilitator! };
       channels.set(stallId, ch);
+      save();
     } else if (ch.deposit - ch.owed < maxAmount) {
       const topUp = { channelId: ch.channelId.toString(), amount: deposit.toString(), validBefore, nonce: randomNonce().toString() };
       await relay(a.extra.facilitator, a, { action: "topUp", topUp, signature: await sign("TopUp", topUp) });
       ch.deposit += deposit;
+      save();
     }
     const voucher = { channelId: ch.channelId.toString(), cumulativeAmount: ch.owed.toString() };
     return { action: "voucher", voucher, signature: await sign("Voucher", voucher) } as const;
@@ -213,6 +242,7 @@ export function createBuyer(cfg: BuyerConfig) {
         throw new PaymentRefused("OVERCHARGED", `seller metered ${spent}, quoted at most ${a.extra.maxAmount}`);
       }
       ch.owed = owed;
+      save();
     }
     return { response: res, data: (await readBody(res)) as T, receipt, spent };
   }
@@ -224,14 +254,18 @@ export function createBuyer(cfg: BuyerConfig) {
   async function closeChannel(stallId: bigint) {
     const ch = channels.get(stallId);
     if (!ch) return;
-    const closed = await postJson<SettlementResponse>(`${ch.facilitator}/close`, { channelId: ch.channelId.toString(), signature: await sign("CloseChannel", { channelId: ch.channelId.toString() }) }, f);
-    if (!closed.success) throw refusal(closed.errorReason ?? "close_failed");
-    if (ch.owed > 0n) {
+    const state = await channelState(ch);
+    if (state.closeAt === 0n) {
+      const closed = await postJson<SettlementResponse>(`${ch.facilitator}/close`, { channelId: ch.channelId.toString(), signature: await sign("CloseChannel", { channelId: ch.channelId.toString() }) }, f);
+      if (!closed.success) throw refusal(closed.errorReason ?? "close_failed");
+    }
+    if (ch.owed > state.claimed && !state.finalized) {
       const voucher = { channelId: ch.channelId.toString(), cumulativeAmount: ch.owed.toString() };
       // Fails harmlessly if the seller already claimed this much.
       await postJson(`${ch.facilitator}/claim`, { voucher, signature: await sign("Voucher", voucher) }, f);
     }
     channels.delete(stallId);
+    save();
   }
 
   /** Releases a submitted task's escrow to the seller, gaslessly through the facilitator. Needs `agentCanApprove`. */

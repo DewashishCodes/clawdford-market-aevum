@@ -23,6 +23,8 @@ export interface MarketConfig {
   facilitatorUrl: string;
   /** Where download_skill installs skills (`<dir>/<name>/SKILL.md`). */
   skillsDir: string;
+  /** Keeps open stream channels across restarts (see BuyerConfig.channelFile). */
+  channelFile?: string;
 }
 
 const CATEGORIES = ["inference", "data", "tool", "knowledge", "skill", "weights", "compute", "human", "eval", "outcome"] as const;
@@ -45,7 +47,7 @@ export function createMarketTools(cfg: MarketConfig) {
   const pub = createPublicClient({ chain, transport: http(rpc) });
   const d = cfg.deployment ?? loadDeployment(cfg.chainId);
   const agent = privateKeyToAccount(cfg.sessionKey);
-  const buyer = createBuyer({ chainId: cfg.chainId, rpcUrl: rpc, deployment: d, sessionKey: cfg.sessionKey, sessionId: cfg.sessionId, budget: { perCall: cfg.perCallBudget }, channelDeposit: cfg.channelDeposit });
+  const buyer = createBuyer({ chainId: cfg.chainId, rpcUrl: rpc, deployment: d, sessionKey: cfg.sessionKey, sessionId: cfg.sessionId, budget: { perCall: cfg.perCallBudget }, channelDeposit: cfg.channelDeposit, channelFile: cfg.channelFile });
   const vault = { address: d.AgentVault, abi: agentVaultAbi } as const;
 
   const session = () => pub.readContract({ ...vault, functionName: "getSession", args: [cfg.sessionId] });
