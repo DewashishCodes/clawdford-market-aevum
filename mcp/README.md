@@ -34,7 +34,18 @@ Before each payment the server checks that the quote's payee matches the stall's
 
 The server never reads the repo's `.env`; give it only these values.
 
-## Claude Code
+## Install
+
+The quickest way in Claude Code is the plugin, which also adds a "how to shop" skill and `/clawdford:budget`:
+
+```
+/plugin marketplace add DewashishCodes/clawdford-market-aevum
+/plugin install clawdford@clawdford-market
+```
+
+It asks for the session key (kept in the OS secure store) and session id. For any other client, the server is one command: `npx -y @clawdford/mcp` (a single bundled file, Node 20+, with the Aevum contract addresses built in).
+
+## Claude Code (from the repo)
 
 From the repo root, with the session from the owner console:
 

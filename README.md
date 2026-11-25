@@ -97,7 +97,14 @@ Run the demo stalls: set `SELLER_PRIVATE_KEY` (holding 2 tUSD8 for 8 stakes of 0
 | 7 | Human review board | task | 0.1 / task | `POST /s/review` `{document, question?}`; reviewer: `GET /s/review/queue`, `POST /s/review/:taskId/decision` (Bearer `REVIEW_TOKEN`) |
 | 8 | Shady stall (demo fixture) | exact | quotes 10x | `GET /s/shady` |
 
-Use the market from Claude Code or Codex: see [`mcp/README.md`](mcp/README.md). To try everything locally, `pnpm --filter @clawdford/mcp dev-stack` starts a fork of Aevum with the facilitator, the seeded stalls and a funded session, and writes `mcp/dev-mcp.json` for `claude --mcp-config`.
+Use the market from Claude Code: install the plugin (MCP server, a "how to shop" skill and `/clawdford:budget`), then enter the session key and id from the owner console when asked:
+
+```
+/plugin marketplace add DewashishCodes/clawdford-market-aevum
+/plugin install clawdford@clawdford-market
+```
+
+Any other MCP client (Codex, Cursor): `npx -y @clawdford/mcp` with `SESSION_KEY` and `SESSION_ID` in its env. Details in [`mcp/README.md`](mcp/README.md). Sellers see earnings, open channels, tasks in flight and ratings under "My stalls" on `/sell`. To try everything locally, `pnpm --filter @clawdford/mcp dev-stack` starts a fork of Aevum with the facilitator, the seeded stalls and a funded session, and writes `mcp/dev-mcp.json` for `claude --mcp-config`.
 
 Run the web app against Aevum: `pnpm --filter @clawdford/web dev` (port 3000; `CHAIN_ID`, `FACILITATOR_URL` and optional `RPC_URL` from the environment, see `.env.example`). Connect MetaMask with "Add Aevum to wallet". Pages: `/` (stats and latest receipts), `/market`, `/stall/[id]`, `/wallet` (owner console: gasless deposit, sessions with caps, live spend, Revoke, channels, ratings), `/sell` (identity, 402 check, stake and list), `/tasks` (task board and the human review queue), `/activity` (live feed). Locally, `pnpm --filter @clawdford/mcp dev-stack` prints the line that starts it against a fork with a dev wallet, no MetaMask needed.
 
