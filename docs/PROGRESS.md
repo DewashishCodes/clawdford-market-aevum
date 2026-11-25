@@ -8,8 +8,12 @@ State on Nov 25 night: phases 0 to 9 merged; phase 10 parts 1 and 2 merged (agen
 
 1. **Funds left** (Nov 25): deployer about 1.8 tUSD8 and 0.54 tQDAY; owner 0.2 tUSD8 in wallet plus 0.6915 in the vault, 0.039 tQDAY; seller's 2 tUSD8 is all staked; facilitator about 0.3 tQDAY.
 2. **Submission needs** (DoraHacks form, see `docs/QDAY_NOTES.md`): the GitHub link and a demo video; a live URL is optional. Phase 11: README, demo video script and recording (use `claude --mcp-config mcp/aevum-mcp-<id>.json` with a fresh `pnpm owner session --approve`), DoraHacks text.
-3. **Optional hosting** (rest of phase 10): VPS with https for facilitator + sellers, web on Vercel. Then point the stalls at the public URL with `StallRegistry.updateStall` and `IdentityRegistry.update` (no re-seed needed) and do the `/sell` 402 check on Aevum (workflow 8, second half).
+3. **No hosting planned** for facilitator and sellers (D23): they run on the demo machine for the video; stall metadata and agent cards are static files on GitHub. Open: whether the web app goes on Vercel (read-only) so judges get a URL. The `/sell` 402 check on Aevum (workflow 8, second half) needs a public https endpoint, so it stays fork-only unless hosted.
 4. Still open: PRD questions 1 to 3 in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
+
+## Static stall metadata on Aevum (Nov 26)
+
+- `market/44005/` holds the catalog and both agent cards; `pnpm --filter @clawdford/sellers repoint` pointed the 8 stalls and 2 identities at the GitHub copies (10 txs, seller gas only, D23). The web app on Aevum now shows stall names, descriptions and payee badges without a public sellers server. Tx list in `docs/demo-runs/2026-11-25-aevum.md`.
 
 ## Onboarding quick wins (Nov 25)
 
