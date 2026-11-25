@@ -5,7 +5,9 @@
   "type": "module",
   "description": "Demo stalls 1 to 8 on one Express server, plus the seed script that registers them on chain",
   "exports": {
-    ".": "./src/app.ts"
+    ".": "./src/app.ts",
+    "./test-market": "./test/market.ts",
+    "./llm": "./src/llm.ts"
   },
   "scripts": {
     "start": "tsx src/index.ts",
