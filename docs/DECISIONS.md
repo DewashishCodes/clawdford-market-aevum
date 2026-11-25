@@ -95,3 +95,7 @@ Stall metadata, agent cards and the `/sell` endpoint check are URLs that anyone 
 ## D20. Owners can close their agents' channels from the web (Nov 25)
 
 The buyer SDK keeps channel state in memory, so an agent that restarts forgets its open channels and their deposits stay locked until someone closes them. The owner console lists every channel of each session with Close (`requestClose`, owner allowed) and, after the window, Get refund (`finalizeClose`). Revoke still closes them all at once. Because streams are pay as you go (D12), the last call before such a restart is never paid; acceptable for the demo, and the agent can avoid it by calling `close_channels` before exiting.
+
+## D21. Agents get gas to rate, and keep their channels across restarts (Nov 25)
+
+Updates D16 and D20. Rating stays a direct `rate` call from the agent key, but the web app now sends the new agent key 0.005 tQDAY when it creates a session (editable, 0 to skip); one rating costs about 0.0001 tQDAY on Aevum. The buyer SDK takes a `channelFile` and the MCP saves open channels to `STATE_DIR` (default `.clawdford`), so a restarted agent resumes its channels and `close_channels` still pays the last call. Saved channels are checked on chain before use (same session and stall, still open); stale ones are dropped and a fresh channel is opened. If the owner closed a channel from the web meanwhile, the agent's close still pays the last call during the close window.

@@ -4,14 +4,17 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-State on Nov 25 night: phases 0 to 9 merged, CI green (contracts, TypeScript, web build, e2e on anvil for facilitator, SDK, sellers, MCP and web). Protocol live on Aevum, addresses in the README. Facilitator wallet funded with 0.3 tQDAY from the deployer (tx `0x6007077b...3322`).
+State on Nov 25 night: phases 0 to 9 merged plus the first part of phase 10 (agent ratings, channel resume, seller key). CI green. Protocol live on Aevum, addresses in the README.
 
-1. **Seed the demo stalls on Aevum** (waiting on the user):
-   - Add `SELLER_PRIVATE_KEY` to `.env` (a fresh key, not an anvil one) and fund it with 2 tUSD8 (8 stakes of 0.25) plus about 0.1 tQDAY. The deployer holds about 5 tUSD8 and 0.69 tQDAY.
-   - Set the LLM in `.env`: any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`). The user will provide a Groq or Gemini key; examples in `.env.example`.
-   - Set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`. The seed writes that URL into the on-chain agent cards and endpoints, so seed once the public URL exists (phase 10), or update the identities' `agentCardURI` and stalls' endpoints after.
-2. **Phase 10** (`phase/10-live`): Docker compose for facilitator + sellers (+ web), a VPS with https for facilitator and sellers (the web server only fetches public https stall URLs on Aevum, D19), web on Vercel (`DEPLOYMENTS_DIR` or bundle `deployments/44005.json`; indexer is in memory per process, see `shortcut:` in `web/lib/server/indexer.ts`), `app.set("trust proxy", ...)` in the facilitator behind the proxy, then run every workflow on Aevum and record explorer links.
-3. Still open: PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (likely its 5 second close window against the real clock); rerun if CI flakes there.
+1. **Done for phase 10 so far**: `SELLER_PRIVATE_KEY` in `.env`, funded with 2 tUSD8 and 0.1 tQDAY from the deployer (address `0x2cC4469A30946357999623ba500699BaaeB0c87b`; deployer left with about 3 tUSD8 and 0.59 tQDAY). Groq key in `.env`, model `qwen/qwen3.8-27b` (the key has no llama models), verified with paid LexModel and judge calls on the fork.
+2. **Still needed** (`phase/10-live`, waiting on the user's hosting choice): a VPS with https for facilitator + sellers (Docker compose, `app.set("trust proxy", ...)` in the facilitator), web on Vercel (`DEPLOYMENTS_DIR` or bundle `deployments/44005.json`; indexer is in memory per process). Then set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`, seed the stalls on Aevum (the URL goes into the on-chain agent cards), and run every workflow on Aevum recording explorer links.
+3. Still open: PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (5 second close window against the real clock); rerun if CI flakes there.
+
+## Phase 10, part 1: agent ratings, channel resume, seller key (Nov 25)
+
+- Web: creating a session also sends the agent key gas (default 0.005 tQDAY) so `rate_service` works (D21). The dev stack does the same.
+- SDK + MCP: open stream channels are saved to `STATE_DIR` and resumed after a restart; `close_channels` then still pays the last call. Saved channels that do not match the session and stall on chain (e.g. left from a reset fork) are ignored (D21). MCP e2e restarts the agent with a stale entry in the file.
+- Seller key created and funded on Aevum (tUSD8 tx `0xf72c8420...0da87e`, tQDAY tx `0x8e22594d...71c8b6`). Groq wired into the demo stack.
 
 ## Phase 9: web app (Nov 25)
 
