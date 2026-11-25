@@ -8,6 +8,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { startChain } from "@clawdford/testkit";
 import { startDemoMarket, REVIEW_TOKEN } from "@clawdford/sellers/test-market";
 import { openAiLlm } from "@clawdford/sellers/llm";
+import { parseEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 const fork = !process.argv.includes("--anvil");
 const t = await startChain({ fork, port: 8551 });
@@ -16,6 +18,8 @@ const llm = process.env.LLM_BASE_URL ? openAiLlm({ baseUrl: process.env.LLM_BASE
 const market = await startDemoMarket(t, { ownerDeposit: 1_000_000n, claimThreshold: 10_000n, llm });
 await t.fund(t.accounts.owner.address, 400_000n);
 const { agentKey, sessionId } = await market.openSession({ agentCanApprove: true });
+// Gas so the agent can rate (the web app offers the same when it creates a session).
+await t.wallet(t.accounts.owner).sendTransaction({ to: privateKeyToAccount(agentKey).address, value: parseEther("0.5"), type: "legacy" } as never);
 
 const mcpDir = fileURLToPath(new URL("..", import.meta.url));
 const tsx = pathToFileURL(createRequire(join(mcpDir, "package.json")).resolve("tsx/esm")).href;
