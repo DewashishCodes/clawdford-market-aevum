@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { getAddress, type Hex } from "viem";
+import { getAddress, type Address, type Hex } from "viem";
 import { hashVaultMessage, networkOf, vaultDomain, type FacilitatorRequest } from "@clawdford/x402";
 import type { Deployment } from "@clawdford/aevum";
 
@@ -17,7 +17,8 @@ export type VaultCall =
   | { functionName: "claim"; args: readonly unknown[] }
   | { functionName: "requestCloseWithSig"; args: readonly unknown[] }
   | { functionName: "finalizeClose"; args: readonly unknown[] }
-  | { functionName: "approveWithSig"; args: readonly unknown[] };
+  | { functionName: "approveWithSig"; args: readonly unknown[] }
+  | { functionName: "depositWithAuthorization"; args: readonly unknown[] };
 
 export interface Planned {
   call: VaultCall;
@@ -26,6 +27,8 @@ export interface Planned {
   channelId?: bigint;
   action: string;
   amount: string;
+  /** Who pays, when there is no session (deposits). */
+  payer?: Address;
 }
 
 /**

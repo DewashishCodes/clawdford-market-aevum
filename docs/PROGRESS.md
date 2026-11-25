@@ -4,15 +4,25 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-State on Nov 25 evening: phases 0 to 8 merged, CI green (contracts, TypeScript, e2e on anvil for facilitator, SDK, sellers and MCP). Protocol live on Aevum, addresses in the README. Facilitator wallet funded with 0.3 tQDAY from the deployer (tx `0x6007077b...3322`).
+State on Nov 25 night: phases 0 to 9 merged, CI green (contracts, TypeScript, web build, e2e on anvil for facilitator, SDK, sellers, MCP and web). Protocol live on Aevum, addresses in the README. Facilitator wallet funded with 0.3 tQDAY from the deployer (tx `0x6007077b...3322`).
 
 1. **Seed the demo stalls on Aevum** (waiting on the user):
    - Add `SELLER_PRIVATE_KEY` to `.env` (a fresh key, not an anvil one) and fund it with 2 tUSD8 (8 stakes of 0.25) plus about 0.1 tQDAY. The deployer holds about 5 tUSD8 and 0.69 tQDAY.
    - Set the LLM in `.env`: any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`). The user will provide a Groq or Gemini key; examples in `.env.example`.
-   - Set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`. The seed writes that URL into the on-chain agent cards and endpoints, so for a local demo use `http://127.0.0.1:4030` and reseed (new `SEED_DOMAIN_*`, `--force`) once the VPS URL exists in phase 10, or update the identities' `agentCardURI`.
-   - `pnpm --filter @clawdford/sellers seed`, then `pnpm --filter @clawdford/facilitator start` and `pnpm --filter @clawdford/sellers start`.
-2. **Phase 9** (`phase/9-web`): Next.js app (PRD 8.7). The `/tasks` page calls the sellers' `GET /s/review/queue` and `POST /s/review/:taskId/decision` (Bearer `REVIEW_TOKEN`, so the call must go through a Next.js route, not the browser). `/activity` reads the facilitator's `GET /activity` plus chain logs. `/wallet` should show the MCP config snippet from `mcp/README.md` and let the owner rate receipts (D16). For local development use `pnpm --filter @clawdford/mcp dev-stack` (fork, seeded stalls, funded session).
-3. Still open: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `app.set("trust proxy", ...)` behind a proxy (phase 10), PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (likely its 5 second close window against the real clock); rerun if CI flakes there.
+   - Set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`. The seed writes that URL into the on-chain agent cards and endpoints, so seed once the public URL exists (phase 10), or update the identities' `agentCardURI` and stalls' endpoints after.
+2. **Phase 10** (`phase/10-live`): Docker compose for facilitator + sellers (+ web), a VPS with https for facilitator and sellers (the web server only fetches public https stall URLs on Aevum, D19), web on Vercel (`DEPLOYMENTS_DIR` or bundle `deployments/44005.json`; indexer is in memory per process, see `shortcut:` in `web/lib/server/indexer.ts`), `app.set("trust proxy", ...)` in the facilitator behind the proxy, then run every workflow on Aevum and record explorer links.
+3. Still open: PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (likely its 5 second close window against the real clock); rerun if CI flakes there.
+
+## Phase 9: web app (Nov 25)
+
+- `web/`: Next.js 15 (App Router) + Tailwind 4, one teal accent, light and dark. Pages: `/` (hero, how it works, live stats, latest receipts), `/market` (filters by text, category, mode and max price; rating; Confirmation of Payee badge from the agent card), `/stall/[id]` (price, usage, payee, identity, stake, receipts, ratings), `/wallet` (owner console), `/sell`, `/tasks`, `/activity` (polls every 3 s).
+- Owner console: gasless deposit (EIP-3009 signature relayed by the new facilitator `POST /deposit`) or approve + deposit, withdraw, create a session (caps, expiry, categories, stall allowlist, agent may approve; the agent key is generated in the browser and the Claude Code and Codex setup is shown once), live spend bars, Revoke, channel Close and Get refund (D20), rating receipts (D16).
+- `/sell`: register an identity, then the 402 check (endpoint answers 402 with an x402 quote paying the payee through this vault, and the agent card names the same payee) before stake and list. `/tasks`: task board and the human review queue through a proxy route; the reviewer's token stays in the browser.
+- Server: in-memory indexer over all protocol events from the deploy block (1,000-block chunks, 6 in parallel), receipts derived from `Paid`, `ChannelClaimed` and `TaskReleased`, facilitator refusals merged into `/activity`. Server fetches of on-chain URLs are limited to public https on Aevum (D19).
+- Wallet: plain viem over `window.ethereum` with "Add Aevum to wallet", legacy txs, simulate first for readable contract errors; `DEV_WALLET_KEY` on local chains only (D18).
+- `pnpm --filter @clawdford/mcp dev-stack` now also leaves the owner 0.4 tUSD8 in the wallet and prints the web start line; `call-tool` runs one MCP tool as the dev agent.
+- Verified on the Aevum fork in Chrome with the dev wallet plus the MCP agent: workflows 1 (gasless deposit, session with setup snippet), 2 to 4 and 6 (agent pays, shady refused), 5 (reviewer approves in `/tasks`, agent verifies and releases), 7 (Revoke, channels enter the window, next agent call `SESSION_REVOKED`, refund) and 8 (identity, 402 check pass and fail, stake and list stall 13). Fixed along the way: dev wallet reconnect, review message, Codex snippet `RPC_URL`, orphaned channels (D20), activity order within one block time.
+- `WEB_E2E=anvil|fork`: 7 tests of the server queries against the seeded market, plus a URL guard unit test. CI runs it on anvil and builds the web app.
 
 ## Phase 8: MCP server (Nov 25)
 

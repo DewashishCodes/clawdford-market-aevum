@@ -57,6 +57,7 @@ packages/testkit/   test-only anvil setup shared by the e2e suites
 services/facilitator/  /supported /verify /settle /claim /close /activity, SQLite rails
 services/sellers/   demo stalls 1 to 8 on one server, seed script
 mcp/                MCP server (stdio) for Claude Code and Codex; holds only the session key
+web/                Next.js app: market, owner console, seller onboarding, tasks, activity
 tools/              Shanghai bytecode checker
 docs/               PRD, phases, progress, decisions, QDay notes
 deployments/        <chainId>.json written by the deploy script
@@ -78,7 +79,8 @@ End to end (each spawns anvil, deploys and pays over HTTP with x402 headers; run
 from `services/facilitator/`: `FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
 from `packages/sdk/`: `SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
 from `services/sellers/`: `SELLERS_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (PRD workflows 2 to 6 against the demo stalls);
-from `mcp/`: `MCP_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (every MCP tool through a real MCP client). Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
+from `mcp/`: `MCP_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (every MCP tool through a real MCP client);
+from `web/`: `WEB_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (the web app's chain indexer and queries). Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
 
 Run the facilitator: set `FACILITATOR_PRIVATE_KEY` (and `CHAIN_ID`) in `.env`, then `pnpm --filter @clawdford/facilitator start` (port 4020).
 
@@ -96,6 +98,8 @@ Run the demo stalls: set `SELLER_PRIVATE_KEY` (holding 2 tUSD8 for 8 stakes of 0
 | 8 | Shady stall (demo fixture) | exact | quotes 10x | `GET /s/shady` |
 
 Use the market from Claude Code or Codex: see [`mcp/README.md`](mcp/README.md). To try everything locally, `pnpm --filter @clawdford/mcp dev-stack` starts a fork of Aevum with the facilitator, the seeded stalls and a funded session, and writes `mcp/dev-mcp.json` for `claude --mcp-config`.
+
+Run the web app against Aevum: `pnpm --filter @clawdford/web dev` (port 3000; `CHAIN_ID`, `FACILITATOR_URL` and optional `RPC_URL` from the environment, see `.env.example`). Connect MetaMask with "Add Aevum to wallet". Pages: `/` (stats and latest receipts), `/market`, `/stall/[id]`, `/wallet` (owner console: gasless deposit, sessions with caps, live spend, Revoke, channels, ratings), `/sell` (identity, 402 check, stake and list), `/tasks` (task board and the human review queue), `/activity` (live feed). Locally, `pnpm --filter @clawdford/mcp dev-stack` prints the line that starts it against a fork with a dev wallet, no MetaMask needed.
 
 Fork tests against real tUSD8: `cd contracts && AEVUM_FORK=true forge test --match-path "test/fork/*"`.
 

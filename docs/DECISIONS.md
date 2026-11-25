@@ -83,3 +83,15 @@ All eight stalls share one seller key (owner, payee and quote signer) and run on
 ## D17. The facilitator relays agent task approvals (Nov 25)
 
 `approve_task` must work without gas, like every other agent action (D10). The facilitator gained `POST /approve` (`{taskId, signature}`) that relays `approveWithSig` through the same checks, daily limits, send queue and activity log as payments. The vault still requires the session's `agentCanApprove` flag, so an owner who leaves it off keeps approval to themselves.
+
+## D18. Plain viem wallet in the web app, plus a dev key on local chains (Nov 25)
+
+The PRD allows wagmi + RainbowKit or a plain injected connector. We use viem directly over `window.ethereum` (connect, add or switch to Aevum, legacy txs, typed-data signing): one small provider, no extra state library. On local chains only, `DEV_WALLET_KEY` makes the browser sign with a fixed key so the full UI can be driven and tested without MetaMask; the server refuses it when `CHAIN_ID` is 44005.
+
+## D19. The web server fetches only public https URLs on Aevum (Nov 25)
+
+Stall metadata, agent cards and the `/sell` endpoint check are URLs that anyone can put on chain or type in, and the web server fetches them. On Aevum it only fetches public `https` hosts (no localhost, private ranges or link-local, no redirects), so the app can't be used to probe the network it runs in. Local chains allow `http` and localhost for development. The check is on the hostname text, not the resolved IP (marked `shortcut:`).
+
+## D20. Owners can close their agents' channels from the web (Nov 25)
+
+The buyer SDK keeps channel state in memory, so an agent that restarts forgets its open channels and their deposits stay locked until someone closes them. The owner console lists every channel of each session with Close (`requestClose`, owner allowed) and, after the window, Get refund (`finalizeClose`). Revoke still closes them all at once. Because streams are pay as you go (D12), the last call before such a restart is never paid; acceptable for the demo, and the agent can avoid it by calling `close_channels` before exiting.

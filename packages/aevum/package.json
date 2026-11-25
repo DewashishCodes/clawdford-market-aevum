@@ -5,7 +5,9 @@
   "type": "module",
   "description": "Aevum chain definition, contract addresses, ABIs and chunked log helpers",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./abis": "./src/abis.ts",
+    "./chains": "./src/chains.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

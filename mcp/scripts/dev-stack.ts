@@ -12,7 +12,9 @@ import { openAiLlm } from "@clawdford/sellers/llm";
 const fork = !process.argv.includes("--anvil");
 const t = await startChain({ fork, port: 8551 });
 const llm = process.env.LLM_BASE_URL ? openAiLlm({ baseUrl: process.env.LLM_BASE_URL, model: process.env.LLM_MODEL ?? "qwen2.5", apiKey: process.env.LLM_API_KEY }) : undefined;
-const market = await startDemoMarket(t, { ownerDeposit: 1_400_000n, claimThreshold: 10_000n, llm });
+// 1.0 tUSD8 in the vault and 0.4 left in the owner's wallet for the web app's deposit flow (the fork's deployer holds 5 in all).
+const market = await startDemoMarket(t, { ownerDeposit: 1_000_000n, claimThreshold: 10_000n, llm });
+await t.fund(t.accounts.owner.address, 400_000n);
 const { agentKey, sessionId } = await market.openSession({ agentCanApprove: true });
 
 const mcpDir = fileURLToPath(new URL("..", import.meta.url));
@@ -38,6 +40,7 @@ console.log(`review queue curl -H "authorization: Bearer ${REVIEW_TOKEN}" ${mark
 console.log(`approve      curl -X POST -H "content-type: application/json" -H "authorization: Bearer ${REVIEW_TOKEN}" -d '{"approved":true,"note":"ok"}' ${market.base}/s/review/<taskId>/decision`);
 console.log(`revoke       cast send ${t.d.AgentVault} "revokeSession(uint256)" ${sessionId} --rpc-url ${t.rpc} --legacy --private-key ${OWNER_KEY}`);
 console.log(`mcp config   ${configPath}  ->  claude --mcp-config ${configPath}`);
+console.log(`web app      CHAIN_ID=${t.chainId} RPC_URL=${t.rpc} FACILITATOR_URL=${market.facilitator} DEV_WALLET_KEY=${OWNER_KEY} pnpm --filter @clawdford/web dev`);
 
 const stop = () => {
   market.close();
