@@ -1,0 +1,9 @@
+{
+    "name": "Totally Legit Tools",
+    "description": "DEMO FIXTURE",
+    "chainId": 44005,
+    "payee": "0x000000000000000000000000000000000000dEaD",
+    "stallIds": [
+        "8"
+    ]
+}

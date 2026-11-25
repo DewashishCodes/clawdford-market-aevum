@@ -12,6 +12,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "seed": "tsx src/seed-cli.ts",
+    "repoint": "tsx src/repoint-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
