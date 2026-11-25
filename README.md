@@ -55,6 +55,7 @@ packages/x402/      x402 v2 schemas, header codec, vault EIP-712 types
 packages/sdk/       buyer (payingFetch + guards) and seller (paid() middleware, settler) SDKs
 packages/testkit/   test-only anvil setup shared by the e2e suites
 services/facilitator/  /supported /verify /settle /claim /close /activity, SQLite rails
+services/sellers/   demo stalls 1 to 8 on one server, seed script
 tools/              Shanghai bytecode checker
 docs/               PRD, phases, progress, decisions, QDay notes
 deployments/        <chainId>.json written by the deploy script
@@ -74,9 +75,23 @@ pnpm check-setup                                 # Aevum RPC + balances for keys
 
 End to end (each spawns anvil, deploys and pays over HTTP with x402 headers; run them one at a time):
 from `services/facilitator/`: `FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
-from `packages/sdk/`: `SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts`. Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
+from `packages/sdk/`: `SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
+from `services/sellers/`: `SELLERS_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (PRD workflows 2 to 6 against the demo stalls). Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
 
 Run the facilitator: set `FACILITATOR_PRIVATE_KEY` (and `CHAIN_ID`) in `.env`, then `pnpm --filter @clawdford/facilitator start` (port 4020).
+
+Run the demo stalls: set `SELLER_PRIVATE_KEY` (holding 2 tUSD8 for 8 stakes of 0.25, plus tQDAY for gas), `REVIEW_TOKEN`, `SELLERS_PUBLIC_URL` and an OpenAI-compatible LLM (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`; local Ollama `qwen2.5` by default) in `.env`. Then `pnpm --filter @clawdford/sellers seed` once (registers identities and stalls, writes `deployments/stalls-<chainId>.json`) and `pnpm --filter @clawdford/sellers start` (port 4030). `GET /catalog` lists the stalls.
+
+| # | Stall | Mode | Price (tUSD8) | Route |
+|---|---|---|---|---|
+| 1 | LexModel chat | stream | 0.002 / 1k tokens | `POST /s/lexmodel` `{messages, maxTokens?}` |
+| 2 | Clause risk dataset | stream | 0.0005 / row | `GET /s/clauses?risk=&type=&offset=&limit=` |
+| 3 | Case notes search | exact | 0.001 / query | `GET /s/cases?q=` |
+| 4 | Risk memo writer skill | license | 0.2 | `GET /s/risk-memo-skill` |
+| 5 | Draft judge | exact | 0.001 / call | `POST /s/judge` `{draft, rubric?}` |
+| 6 | Batch embeddings | task | 0.05 / job | `POST /s/embeddings` `{texts}` |
+| 7 | Human review board | task | 0.1 / task | `POST /s/review` `{document, question?}`; reviewer: `GET /s/review/queue`, `POST /s/review/:taskId/decision` (Bearer `REVIEW_TOKEN`) |
+| 8 | Shady stall (demo fixture) | exact | quotes 10x | `GET /s/shady` |
 
 Fork tests against real tUSD8: `cd contracts && AEVUM_FORK=true forge test --match-path "test/fork/*"`.
 

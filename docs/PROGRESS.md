@@ -4,18 +4,24 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-State on Nov 24 evening: phases 0 to 6 merged (PRs #1 to #8), `main` is clean, CI green (contracts, TypeScript, e2e on anvil). Protocol live on Aevum, addresses in the README.
+State on Nov 25: phases 0 to 7 merged, CI green (contracts, TypeScript, e2e on anvil for facilitator, SDK and sellers). Protocol live on Aevum, addresses in the README. Facilitator wallet funded with 0.3 tQDAY from the deployer (tx `0x6007077b...3322`).
 
-1. **Fund the facilitator wallet first** (needed for any live run on Aevum). `FACILITATOR_PRIVATE_KEY` is in `.env`, address `0x1f95D77ba8FA26CC4B1b19A321b193487ff04FCc`, balance 0. Pick one:
-   - Quickest: send 0.3 tQDAY from the deployer (has about 0.99). Load `.env`, then
-     `cast send 0x1f95D77ba8FA26CC4B1b19A321b193487ff04FCc --value 0.3ether --rpc-url https://rpc-test.qday.info --legacy --private-key $DEPLOYER_PRIVATE_KEY`.
-   - Faucet: https://faucet.qday.info/en needs a browser wallet. In MetaMask: add network (RPC `https://rpc-test.qday.info`, chain ID 44005, symbol tQDAY, explorer `https://explorer-test.qday.info`), then account list, "Add wallet", "Import an account", paste the key from `.env` (never into chat), connect on the faucet and claim.
-   - Check with `pnpm check-setup`: the facilitator row should show tQDAY.
-2. **Phase 7** (`phase/7-stalls`): demo stalls 1 to 8 (PRD 8.5) in `services/sellers`: one Express server, one `createSeller` per stall, `serveAgentCard` per identity, plus a seed script that registers identities (with an http `agentCardURI`, see D14), stalls and small stakes. Stall 8 (Shady) quotes above its on-chain price and points its card at a different payee; the buyer SDK already refuses both (`OVERPRICED`, `PAYEE_MISMATCH`). Start from `packages/sdk/test/e2e.test.ts`, which already runs one stall per mode with `paid()`.
-   - Before starting, decide with the user: LLM stalls need an OpenAI-compatible endpoint (PRD default: local Ollama `qwen2.5`). Check whether Ollama is installed or use a hosted key in `.env`.
-   - Seller keys: the seed script needs a funded seller key (stake 0.25 tUSD8 per stall, plus gas). `.env.example` has `SELLER_PRIVATE_KEY`; the user's `.env` doesn't yet.
-   - Done when workflows 2 to 6 (PRD section 9) pass end to end on the fork.
-3. Still open: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `app.set("trust proxy", ...)` behind a proxy (phase 10), PRD questions in `docs/QDAY_NOTES.md` (ask on the QDay Discord).
+1. **Seed the demo stalls on Aevum** (needed before phase 8 can run live):
+   - Add `SELLER_PRIVATE_KEY` to `.env` (a fresh key, not an anvil one) and fund it with 2 tUSD8 (8 stakes of 0.25) plus about 0.1 tQDAY. The deployer holds about 5 tUSD8 and 0.69 tQDAY.
+   - Set the LLM in `.env`: any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`). The user will provide a Groq or Gemini key; examples in `.env.example`.
+   - Set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`. The seed writes that URL into the on-chain agent cards and endpoints, so for a local demo use `http://127.0.0.1:4030` and reseed (new `SEED_DOMAIN_*`, `--force`) once the VPS URL exists in phase 10, or update the identities' `agentCardURI`.
+   - `pnpm --filter @clawdford/sellers seed`, then `pnpm --filter @clawdford/facilitator start` and `pnpm --filter @clawdford/sellers start`.
+2. **Phase 8** (`phase/8-mcp`): MCP server over stdio holding only the session key (PRD 8.6). Tools map onto `createBuyer` plus chain reads; `market_search` can read `StallRegistry.listStalls` or the sellers' `GET /catalog`. The human review stall's queue (`/s/review/queue`, `/s/review/:taskId/decision`) is what the phase 9 `/tasks` page will call.
+3. Still open: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `app.set("trust proxy", ...)` behind a proxy (phase 10), PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (likely its 5 second close window against the real clock); rerun if CI flakes there.
+
+## Phase 7: demo stalls and seed script (Nov 25)
+
+- `services/sellers`: one Express server with all eight PRD 8.5 stalls, each a `createSeller` + `paid()` route: LexModel chat (stream, metered by the provider's token count), clause risk dataset (stream, per row, bundled CSV), case notes search (exact), risk memo writer skill (license, a real skill file), draft judge (exact, LLM grader), batch embeddings (task, delivered by `submitResult` on its own), human review board (task, reviewer queue behind a bearer token) and the Shady stall (demo fixture, 10x quote, card names another payee).
+- Seed (`pnpm --filter @clawdford/sellers seed`): registers two identities (demo and shady) with http agent cards (D14) and the eight stalls at `minStake`, writes `deployments/stalls-<chainId>.json`. Refuses anvil keys on Aevum.
+- LLM stalls take any OpenAI-compatible endpoint (D15). Inputs are validated before the 402, so nobody pays for a rejected request. Task result URLs serve the exact bytes whose keccak256 is the on-chain `resultHash`.
+- `GET /catalog` lists the stalls; stall `metadataURI`s point at it.
+- Testkit: `fund(to, amount)` helper (mint on anvil, transfer from the Aevum deployer on the fork).
+- E2E (`SELLERS_E2E=anvil|fork`): workflows 2 to 6 with a fake LLM: case search and judge with receipts, LexModel and dataset streams with a settler claim, close and refund, license purchase recorded on chain, human review approved then released by the owner, embeddings job delivered, Shady refused with `PAYEE_MISMATCH`, payment above the session cap refused with `CAP_EXCEEDED`. 10 tests pass on anvil and on the Aevum fork. CI runs it on anvil.
 
 ## Phase 6: buyer and seller SDKs (Nov 24)
 

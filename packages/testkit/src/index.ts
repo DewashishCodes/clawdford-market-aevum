@@ -94,23 +94,20 @@ export async function startChain(opts: { fork: boolean; port: number }) {
   const d: Deployment = loadDeployment(chainId);
   const { seller, owner, agent, deployer } = accounts;
 
-  // tUSD8: 1.0 stake budget for the seller, 0.5 for the owner's vault deposit
-  const grants: [Address, bigint][] = [
-    [seller.address, 1_000_000n],
-    [owner.address, 500_000n],
-  ];
-  if (opts.fork) {
-    const rich = loadDeployment(44005).deployer; // holds real tUSD8 on Aevum
+  /** Gives `to` tUSD8: minted on anvil, sent from the Aevum deployer (which holds real tUSD8) on the fork. */
+  async function fund(to: Address, amount: bigint) {
+    if (!opts.fork) return void (await send(deployer, d.tUSD8, mockTUSD8Abi, "mint", [to, amount]));
+    const rich = loadDeployment(44005).deployer;
     await test.impersonateAccount({ address: rich });
     await test.setBalance({ address: rich, value: 10n ** 18n });
     const erc20 = createWalletClient({ chain, transport: http(rpc), account: rich });
-    for (const [to, amount] of grants) {
-      const hash = await erc20.writeContract({ address: d.tUSD8, abi: mockTUSD8Abi, functionName: "transfer", args: [to, amount], type: "legacy" });
-      await pub.waitForTransactionReceipt({ hash });
-    }
-  } else {
-    for (const [to, amount] of grants) await send(deployer, d.tUSD8, mockTUSD8Abi, "mint", [to, amount]);
+    const hash = await erc20.writeContract({ address: d.tUSD8, abi: mockTUSD8Abi, functionName: "transfer", args: [to, amount], type: "legacy" });
+    await pub.waitForTransactionReceipt({ hash });
   }
+
+  // tUSD8: 1.0 stake budget for the seller, 0.5 for the owner's vault deposit
+  await fund(seller.address, 1_000_000n);
+  await fund(owner.address, 500_000n);
 
   const identityId = (await send(seller, d.IdentityRegistry, identityRegistryAbi, "register", ["stalls.test", "ipfs://card"])) as bigint;
   await send(seller, d.tUSD8, mockTUSD8Abi, "approve", [d.StallRegistry, 1_000_000n]);
@@ -141,6 +138,7 @@ export async function startChain(opts: { fork: boolean; port: number }) {
     identityId,
     agentKey,
     send,
+    fund,
     now,
     balanceOf: async (who: Address) =>
       (await pub.readContract({ address: d.tUSD8, abi: mockTUSD8Abi, functionName: "balanceOf", args: [who] })) as bigint,

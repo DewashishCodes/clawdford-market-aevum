@@ -71,3 +71,7 @@ Like card processors and the hosted x402 facilitators, the platform pays settlem
 
 The PRD puts the card at `/.well-known/agent-card.json`, but one server hosts many stalls (PRD 8.5), so that path can't be per stall. The buyer instead reads `IdentityRegistry.getIdentity(stall.identityId).agentCardURI` (the ERC-8004 way) and fetches it. The card lists its `stallIds` and `payee`. Confirmation of Payee passes only if the quote's `payTo`, the stall's registered payee and the card's payee all match and the card lists the stall.
 
+
+## D15. Demo stalls: one seller key, two identities, any OpenAI-compatible LLM (Nov 25)
+
+All eight stalls share one seller key (owner, payee and quote signer) and run on one server. Stalls 1 to 7 hang off one identity whose agent card lists them; the Shady stall has its own identity so its card can name a different payee. The buyer checks the payee before the price, so the Shady stall is refused with `PAYEE_MISMATCH`; its 10x quote would hit `OVERPRICED` if the payee matched. LLM stalls (LexModel, draft judge) take any OpenAI-compatible endpoint from env (PRD default Ollama `qwen2.5`; Groq or Gemini work for the demo) and present it under the stall's own model name. Simplifications, each marked `shortcut:` in code: case search ranks by keyword overlap, the embeddings job uses hashed bag-of-words vectors, task results and the review queue live in memory, and every skill download is a new license purchase. Inputs are validated before the 402, so a buyer never pays for a request the stall would reject.

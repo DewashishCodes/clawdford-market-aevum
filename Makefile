@@ -59,7 +59,9 @@ facilitator:
 e2e-anvil:
 	cd services/facilitator && FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts
 	cd packages/sdk && SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts
+	cd services/sellers && SELLERS_E2E=anvil pnpm exec vitest run test/e2e.test.ts
 
 e2e-fork:
 	cd services/facilitator && FACILITATOR_E2E=fork pnpm exec vitest run test/e2e.test.ts
 	cd packages/sdk && SDK_E2E=fork pnpm exec vitest run test/e2e.test.ts
+	cd services/sellers && SELLERS_E2E=fork pnpm exec vitest run test/e2e.test.ts

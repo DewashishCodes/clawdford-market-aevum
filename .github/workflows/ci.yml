@@ -77,3 +77,6 @@ jobs:
       - name: SDK e2e
         working-directory: packages/sdk
         run: SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts
+      - name: Sellers e2e (workflows 2 to 6)
+        working-directory: services/sellers
+        run: SELLERS_E2E=anvil pnpm exec vitest run test/e2e.test.ts
