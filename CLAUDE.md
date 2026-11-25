@@ -16,9 +16,10 @@ Read first: `docs/PROGRESS.md` (top section "Next session: start here"), then `d
 - Contracts: `cd contracts && forge test`, `forge fmt` (CI runs `forge fmt --check`), `forge build --sizes` (AgentVault is ~22.2 KB of the 24,576 limit).
 - Coverage: `forge coverage --no-match-coverage "(test|script)/" --report summary`.
 - Fork tests: `AEVUM_FORK=true forge test --match-path "test/fork/*"`.
-- E2E (spawn anvil, deploy, pay over HTTP): `FACILITATOR_E2E=anvil` in `services/facilitator`, `SDK_E2E=anvil` in `packages/sdk`, `SELLERS_E2E=anvil` in `services/sellers`, each `pnpm exec vitest run test/e2e.test.ts`. Use `fork` for the Aevum fork. Run them one at a time (all write `deployments/31337.json`). Shared setup is `packages/testkit`.
+- E2E (spawn anvil, deploy, pay over HTTP): `FACILITATOR_E2E=anvil` in `services/facilitator`, `SDK_E2E=anvil` in `packages/sdk`, `SELLERS_E2E=anvil` in `services/sellers`, `MCP_E2E=anvil` in `mcp`, each `pnpm exec vitest run test/e2e.test.ts`. Use `fork` for the Aevum fork. Run them one at a time (all write `deployments/31337.json`). Shared setup is `packages/testkit`.
 - After contract changes: `forge build` then `pnpm export-abis` (regenerates `packages/aevum/src/abis.ts`).
 - TypeScript: `pnpm typecheck`, `pnpm test`. Shanghai scan: `pnpm check-shanghai`.
+- Local demo stack on a fork: `pnpm --filter @clawdford/mcp dev-stack` (writes `mcp/dev-mcp.json` for `claude --mcp-config`).
 - No `make` on the Windows dev box; root `package.json` scripts mirror the Makefile.
 
 ## Gotchas

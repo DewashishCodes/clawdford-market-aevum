@@ -18,7 +18,7 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/): `fe
 | 5 | M2 | `phase/5-x402-facilitator` | Nov 28 to 30 | `packages/x402` (schemas, headers, EIP-712), facilitator (`/supported`, `/verify`, `/settle`, `/activity`, SQLite rails) | vitest green, exact pay works on fork | done (PR #7) |
 | 6 | M2 | `phase/6-sdk` | Nov 30 to Dec 1 | buyer SDK (`payingFetch`, CoP, price guard, channels) and seller SDK (`paid()`, voucher store, settler, agent card) | vitest green | done (PR #8) |
 | 7 | M2 | `phase/7-stalls` | Dec 1 to 2 | demo stalls 1 to 8 + seed script | workflows 2 to 6 pass end to end on fork | done (PR #10) |
-| 8 | M3 | `phase/8-mcp` | Dec 2 to 3 | MCP server with all tools + `mcp/README.md` | Claude Code completes the demo prompt on fork | todo |
+| 8 | M3 | `phase/8-mcp` | Dec 2 to 3 | MCP server with all tools + `mcp/README.md` | Claude Code completes the demo prompt on fork | done (PR #11) |
 | 9 | M3 | `phase/9-web` | Dec 3 to 5 | Next.js app: `/`, `/market`, `/stall/[id]`, `/wallet`, `/sell`, `/tasks`, `/activity` | workflows 1 to 8 pass on fork | todo |
 | 10 | M4 | `phase/10-live` | Dec 5 to 8 | Docker compose, VPS for facilitator + sellers, Vercel for web, full run on Aevum, testnet fixes | every workflow recorded with explorer links | todo |
 | 11 | M5 | `phase/11-submission` | Dec 8 to 10 | README, `docs/`, demo video, DoraHacks page, Demo Day rehearsal | checklist done, freeze Dec 10 12:00 IST | todo |

@@ -75,3 +75,11 @@ The PRD puts the card at `/.well-known/agent-card.json`, but one server hosts ma
 ## D15. Demo stalls: one seller key, two identities, any OpenAI-compatible LLM (Nov 25)
 
 All eight stalls share one seller key (owner, payee and quote signer) and run on one server. Stalls 1 to 7 hang off one identity whose agent card lists them; the Shady stall has its own identity so its card can name a different payee. The buyer checks the payee before the price, so the Shady stall is refused with `PAYEE_MISMATCH`; its 10x quote would hit `OVERPRICED` if the payee matched. LLM stalls (LexModel, draft judge) take any OpenAI-compatible endpoint from env (PRD default Ollama `qwen2.5`; Groq or Gemini work for the demo) and present it under the stall's own model name. Simplifications, each marked `shortcut:` in code: case search ranks by keyword overlap, the embeddings job uses hashed bag-of-words vectors, task results and the review queue live in memory, and every skill download is a new license purchase. Inputs are validated before the 402, so a buyer never pays for a request the stall would reject.
+
+## D16. Ratings are sent by the agent key itself, which then needs gas (Nov 25)
+
+`ReputationRegistry.rate` checks `msg.sender` is the session owner or agent and has no signature variant, and the MCP agent holds no gas. Adding `rateWithSig` means redeploying the registry on Aevum; ratings are first in the PRD cut order, so we kept the contract. `rate_service` sends the rating from the agent key when it holds a little tQDAY and otherwise explains that the owner can rate from the web app. Revisit with a `rateWithSig` redeploy if time allows after M4.
+
+## D17. The facilitator relays agent task approvals (Nov 25)
+
+`approve_task` must work without gas, like every other agent action (D10). The facilitator gained `POST /approve` (`{taskId, signature}`) that relays `approveWithSig` through the same checks, daily limits, send queue and activity log as payments. The vault still requires the session's `agentCanApprove` flag, so an owner who leaves it off keeps approval to themselves.

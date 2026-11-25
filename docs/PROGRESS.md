@@ -4,15 +4,24 @@ Newest first. One entry per phase (see `docs/PHASES.md`).
 
 ## Next session: start here
 
-State on Nov 25: phases 0 to 7 merged, CI green (contracts, TypeScript, e2e on anvil for facilitator, SDK and sellers). Protocol live on Aevum, addresses in the README. Facilitator wallet funded with 0.3 tQDAY from the deployer (tx `0x6007077b...3322`).
+State on Nov 25 evening: phases 0 to 8 merged, CI green (contracts, TypeScript, e2e on anvil for facilitator, SDK, sellers and MCP). Protocol live on Aevum, addresses in the README. Facilitator wallet funded with 0.3 tQDAY from the deployer (tx `0x6007077b...3322`).
 
-1. **Seed the demo stalls on Aevum** (needed before phase 8 can run live):
+1. **Seed the demo stalls on Aevum** (waiting on the user):
    - Add `SELLER_PRIVATE_KEY` to `.env` (a fresh key, not an anvil one) and fund it with 2 tUSD8 (8 stakes of 0.25) plus about 0.1 tQDAY. The deployer holds about 5 tUSD8 and 0.69 tQDAY.
    - Set the LLM in `.env`: any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`). The user will provide a Groq or Gemini key; examples in `.env.example`.
    - Set `REVIEW_TOKEN` and `SELLERS_PUBLIC_URL`. The seed writes that URL into the on-chain agent cards and endpoints, so for a local demo use `http://127.0.0.1:4030` and reseed (new `SEED_DOMAIN_*`, `--force`) once the VPS URL exists in phase 10, or update the identities' `agentCardURI`.
    - `pnpm --filter @clawdford/sellers seed`, then `pnpm --filter @clawdford/facilitator start` and `pnpm --filter @clawdford/sellers start`.
-2. **Phase 8** (`phase/8-mcp`): MCP server over stdio holding only the session key (PRD 8.6). Tools map onto `createBuyer` plus chain reads; `market_search` can read `StallRegistry.listStalls` or the sellers' `GET /catalog`. The human review stall's queue (`/s/review/queue`, `/s/review/:taskId/decision`) is what the phase 9 `/tasks` page will call.
+2. **Phase 9** (`phase/9-web`): Next.js app (PRD 8.7). The `/tasks` page calls the sellers' `GET /s/review/queue` and `POST /s/review/:taskId/decision` (Bearer `REVIEW_TOKEN`, so the call must go through a Next.js route, not the browser). `/activity` reads the facilitator's `GET /activity` plus chain logs. `/wallet` should show the MCP config snippet from `mcp/README.md` and let the owner rate receipts (D16). For local development use `pnpm --filter @clawdford/mcp dev-stack` (fork, seeded stalls, funded session).
 3. Still open: gasless `depositWithAuthorization` relay (phase 9 `/wallet`), `app.set("trust proxy", ...)` behind a proxy (phase 10), PRD questions in `docs/QDAY_NOTES.md`. The SDK e2e stream test failed once in six runs locally (likely its 5 second close window against the real clock); rerun if CI flakes there.
+
+## Phase 8: MCP server (Nov 25)
+
+- `mcp/`: stdio MCP server (`@modelcontextprotocol/sdk` 1.32) holding only the session key, configured by env (never reads the repo `.env`). Tools: `market_search` (stalls from chain, names and usage from each stall's `metadataURI`, ratings, whether the session's category mask allows it), `wallet_status`, `call_service`, `buy_license`, `download_skill` (installs `SKILL.md`, safe folder names, never overwrites), `create_task`, `get_task` (verifies the result against the on-chain hash), `approve_task`, `rate_service`, `close_channels`. Every result carries a `budget` block; refusals return the readable code with `charged: "nothing"`. Pays only a stall's registered endpoint.
+- Facilitator `POST /approve` relays `approveWithSig`; buyer SDK `approveTask` (D17). Ratings need gas on the agent key (D16).
+- Demo catalog entries now carry a `usage` line for agents. The demo market test setup moved to `services/sellers/test/market.ts` (shared by the sellers and MCP e2e).
+- `pnpm --filter @clawdford/mcp dev-stack`: fork of Aevum with the facilitator, seeded stalls and a funded session; writes `mcp/dev-mcp.json`.
+- E2E (`MCP_E2E=anvil|fork`): 11 tests through a real MCP client, including Shady refused (`PAYEE_MISMATCH`), task approved and released, and revoke (`SESSION_REVOKED`). Passes on anvil and on the Aevum fork; CI runs it on anvil. Also checked the server over real stdio via `pnpm --silent start` against live Aevum.
+- Done criterion met: headless Claude Code (Sonnet) given the PRD demo prompt with only these tools searched the market, paid six stalls (dataset stream, case search, LexModel stream, skill license, draft judge, human review with approval), closed its channels and wrote the memo with a cost breakdown, spending 0.3065 of a 1 tUSD8 budget. Transcript in `docs/demo-runs/2026-11-25-fork.md`.
 
 ## Phase 7: demo stalls and seed script (Nov 25)
 

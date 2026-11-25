@@ -56,6 +56,7 @@ packages/sdk/       buyer (payingFetch + guards) and seller (paid() middleware, 
 packages/testkit/   test-only anvil setup shared by the e2e suites
 services/facilitator/  /supported /verify /settle /claim /close /activity, SQLite rails
 services/sellers/   demo stalls 1 to 8 on one server, seed script
+mcp/                MCP server (stdio) for Claude Code and Codex; holds only the session key
 tools/              Shanghai bytecode checker
 docs/               PRD, phases, progress, decisions, QDay notes
 deployments/        <chainId>.json written by the deploy script
@@ -76,7 +77,8 @@ pnpm check-setup                                 # Aevum RPC + balances for keys
 End to end (each spawns anvil, deploys and pays over HTTP with x402 headers; run them one at a time):
 from `services/facilitator/`: `FACILITATOR_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
 from `packages/sdk/`: `SDK_E2E=anvil pnpm exec vitest run test/e2e.test.ts`;
-from `services/sellers/`: `SELLERS_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (PRD workflows 2 to 6 against the demo stalls). Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
+from `services/sellers/`: `SELLERS_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (PRD workflows 2 to 6 against the demo stalls);
+from `mcp/`: `MCP_E2E=anvil pnpm exec vitest run test/e2e.test.ts` (every MCP tool through a real MCP client). Use `fork` instead of `anvil` for a fork of Aevum with the real tUSD8.
 
 Run the facilitator: set `FACILITATOR_PRIVATE_KEY` (and `CHAIN_ID`) in `.env`, then `pnpm --filter @clawdford/facilitator start` (port 4020).
 
@@ -92,6 +94,8 @@ Run the demo stalls: set `SELLER_PRIVATE_KEY` (holding 2 tUSD8 for 8 stakes of 0
 | 6 | Batch embeddings | task | 0.05 / job | `POST /s/embeddings` `{texts}` |
 | 7 | Human review board | task | 0.1 / task | `POST /s/review` `{document, question?}`; reviewer: `GET /s/review/queue`, `POST /s/review/:taskId/decision` (Bearer `REVIEW_TOKEN`) |
 | 8 | Shady stall (demo fixture) | exact | quotes 10x | `GET /s/shady` |
+
+Use the market from Claude Code or Codex: see [`mcp/README.md`](mcp/README.md). To try everything locally, `pnpm --filter @clawdford/mcp dev-stack` starts a fork of Aevum with the facilitator, the seeded stalls and a funded session, and writes `mcp/dev-mcp.json` for `claude --mcp-config`.
 
 Fork tests against real tUSD8: `cd contracts && AEVUM_FORK=true forge test --match-path "test/fork/*"`.
 
