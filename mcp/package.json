@@ -11,7 +11,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "dev-stack": "tsx scripts/dev-stack.ts"
+    "dev-stack": "tsx scripts/dev-stack.ts",
+    "call-tool": "tsx scripts/call-tool.ts"
   },
   "dependencies": {
     "@clawdford/aevum": "workspace:*",
