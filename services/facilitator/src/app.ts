@@ -2,6 +2,7 @@ import express, { type Request } from "express";
 import {
   BaseError,
   ContractFunctionRevertedError,
+  parseSignature,
   parseEventLogs,
   type Account,
   type Address,
@@ -13,6 +14,7 @@ import {
 import { agentVaultAbi, type Deployment } from "@clawdford/aevum";
 import {
   ApproveRequest,
+  DepositRequest,
   ClaimRequest,
   CloseRequest,
   FacilitatorRequest,
@@ -70,8 +72,7 @@ export function createApp(deps: FacilitatorDeps) {
     if (planned.channelId !== undefined && planned.sessionId === 0n) {
       planned.sessionId = (await getChannel(planned.channelId)).sessionId;
     }
-    const session = await publicClient.readContract({ ...vault, functionName: "getSession", args: [planned.sessionId] });
-    const payer = session.owner;
+    const payer = planned.payer ?? (await publicClient.readContract({ ...vault, functionName: "getSession", args: [planned.sessionId] })).owner;
     if (ip !== undefined) {
       const limited = rails.check(ip, planned.sessionId.toString());
       if (limited) return { ok: false, reason: limited, planned, payer };
@@ -128,6 +129,22 @@ export function createApp(deps: FacilitatorDeps) {
     const task = await publicClient.readContract({ ...vault, functionName: "getTask", args: [taskId] });
     const call = { functionName: "approveWithSig", args: [taskId, parsed.data.signature] } as const;
     return { call, sessionId: task.sessionId, action: "approve", amount: task.amount.toString() };
+  }
+
+  function planDeposit(body: unknown): Planned | string {
+    const parsed = DepositRequest.safeParse(body);
+    if (!parsed.success) return "invalid_payload";
+    const { from, amount, validAfter, validBefore, nonce, signature } = parsed.data;
+    let sig;
+    try {
+      sig = parseSignature(signature);
+    } catch {
+      return "invalid_signature";
+    }
+    const v = Number(sig.v ?? 27n + BigInt(sig.yParity));
+    const call = { functionName: "depositWithAuthorization", args: [from, BigInt(amount), BigInt(validAfter), BigInt(validBefore), nonce, v, sig.r, sig.s] } as const;
+    // No session: deposits share the "0" bucket in the daily limits.
+    return { call, sessionId: 0n, action: "deposit", amount, payer: from };
   }
 
   /** Checks, then sends a legacy tx and reads the ids out of the receipt. Every attempt is recorded. */
@@ -242,6 +259,15 @@ export function createApp(deps: FacilitatorDeps) {
   app.post("/approve", async (req, res, next) => {
     try {
       res.json(await serial(async () => execute(await planApprove(req.body), ipOf(req), "escrow")));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Gasless owner funding (PRD workflow 1): the vault always credits the signer, so relaying it is safe.
+  app.post("/deposit", async (req, res, next) => {
+    try {
+      res.json(await serial(() => execute(planDeposit(req.body), ipOf(req), "deposit")));
     } catch (err) {
       next(err);
     }

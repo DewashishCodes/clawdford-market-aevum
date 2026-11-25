@@ -143,6 +143,8 @@ export const ClaimRequest = z.object({ voucher: Voucher, signature });
 export const CloseRequest = z.object({ channelId: uint, signature: signature.optional() });
 /** Facilitator `/approve`: release a submitted task with the agent's ApproveTask signature (needs `agentCanApprove`). */
 export const ApproveRequest = z.object({ taskId: uint, signature });
+/** Facilitator `/deposit`: gasless vault deposit from the owner's EIP-3009 ReceiveWithAuthorization (to = the vault). */
+export const DepositRequest = z.object({ from: address, amount: uint, validAfter: uint, validBefore: uint, nonce: bytes32, signature });
 
 /**
  * Seller agent card, served at the identity's on-chain `agentCardURI`. Buyers check that `payee` matches the quote
@@ -181,4 +183,5 @@ export type EscrowRequirements = z.infer<typeof EscrowRequirements>;
 export type ClaimRequest = z.infer<typeof ClaimRequest>;
 export type CloseRequest = z.infer<typeof CloseRequest>;
 export type ApproveRequest = z.infer<typeof ApproveRequest>;
+export type DepositRequest = z.infer<typeof DepositRequest>;
 export type AgentCard = z.infer<typeof AgentCard>;

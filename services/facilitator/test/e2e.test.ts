@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { keccak256, toHex, type Hex } from "viem";
+import { TUSD8_EIP712 } from "@clawdford/aevum";
 import { agentVaultAbi } from "@clawdford/aevum";
 import { CHALLENGE_WINDOW, startChain, type TestChain } from "@clawdford/testkit";
 import {
@@ -172,5 +173,24 @@ describe.skipIf(!MODE)(`facilitator e2e on ${MODE}`, () => {
       "ok", "ok", // top up, open
       "QuoteAlreadyUsed", "ok",
     ]);
+  });
+
+  it("relays a gasless EIP-3009 deposit, credited to the signer", async () => {
+    const { owner } = t.accounts;
+    await t.fund(owner.address, 100_000n);
+    const before = (await t.pub.readContract({ address: t.d.AgentVault, abi: agentVaultAbi, functionName: "balanceOf", args: [owner.address] })) as bigint;
+    const auth = { from: owner.address, to: t.d.AgentVault, value: 100_000n, validAfter: 0n, validBefore: (await t.now()) + 600n, nonce: keccak256(toHex("deposit-1")) };
+    const signature = await owner.signTypedData({
+      domain: { ...TUSD8_EIP712, chainId: t.chainId, verifyingContract: t.d.tUSD8 },
+      types: { ReceiveWithAuthorization: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "value", type: "uint256" }, { name: "validAfter", type: "uint256" }, { name: "validBefore", type: "uint256" }, { name: "nonce", type: "bytes32" }] },
+      primaryType: "ReceiveWithAuthorization",
+      message: auth,
+    });
+    const body = { from: auth.from, amount: "100000", validAfter: "0", validBefore: auth.validBefore.toString(), nonce: auth.nonce, signature };
+    expect(await post("/deposit", body)).toMatchObject({ success: true, payer: owner.address, amount: "100000" });
+    const after = (await t.pub.readContract({ address: t.d.AgentVault, abi: agentVaultAbi, functionName: "balanceOf", args: [owner.address] })) as bigint;
+    expect(after - before).toBe(100_000n);
+    expect(await post("/deposit", body)).toMatchObject({ success: false }); // nonce used
+    expect(await post("/deposit", { ...body, signature: "0x1234" })).toMatchObject({ success: false, errorReason: "invalid_signature" });
   });
 });
